@@ -1,0 +1,30 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_customer_support
+  actions:
+    - kind: InvokeAzureAgent
+      id: action_greet_customer
+      conversationId: =System.ConversationId
+      agent:
+        name: customer-support
+      input:
+        messages: =System.LastMessage
+      output:
+        autoSend: true
+    - kind: Condition
+      id: action_check_sentiment
+      condition: =System.Sentiment == "negative"
+      then:
+        - kind: InvokeAzureAgent
+          id: action_escalate
+          conversationId: =System.ConversationId
+          agent:
+            name: customer-support
+          input:
+            messages: "This customer needs special attention. Please provide extra care."
+          output:
+            autoSend: true
+id: customer-support-workflow
+name: Customer Support Workflow
+description: "Handles customer conversations with sentiment analysis and escalation"

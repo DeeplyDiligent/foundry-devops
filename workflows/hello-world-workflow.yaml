@@ -1,0 +1,17 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_hello_world
+  actions:
+    - kind: InvokeAzureAgent
+      id: action_hello_world_start
+      conversationId: =System.ConversationId
+      agent:
+        name: hello-world
+      input:
+        messages: =System.LastMessage
+      output:
+        autoSend: true
+id: hello-world-workflow
+name: Hello World Workflow
+description: "Simple workflow that triggers the hello-world agent on conversation start"

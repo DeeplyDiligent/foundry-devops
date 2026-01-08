@@ -1,0 +1,18 @@
+metadata:
+  logo: Avatar_Default.svg
+  description: "Hello World agent for testing and demonstration"
+  modified_at: "1736294400"
+object: agent.version
+id: hello-world:1
+name: hello-world
+version: "1"
+description: "A simple hello world agent for testing deployments"
+created_at: 1736294400
+definition:
+  kind: prompt
+  model: gpt-4o
+  instructions: |
+    You are a friendly hello world assistant. 
+    When users greet you, respond warmly and ask how you can help them today.
+    Keep your responses concise and helpful.
+  tools: []

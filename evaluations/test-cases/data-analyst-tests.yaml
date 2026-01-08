@@ -1,0 +1,49 @@
+# Evaluation Test Cases for Data Analyst Agent
+
+test_cases:
+  - id: test_analysis_1
+    name: "Basic Data Analysis"
+    agent: data-analyst
+    input: "Analyze this sales data: Q1: 100k, Q2: 150k, Q3: 120k, Q4: 180k"
+    expected_contains:
+      - "trend"
+      - "growth"
+    expected_code_execution: true
+    metrics:
+      - response_time
+      - analysis_depth
+      - insight_quality
+
+  - id: test_analysis_2
+    name: "Statistical Analysis Request"
+    agent: data-analyst
+    input: "Calculate the mean and standard deviation of these values: 10, 20, 30, 40, 50"
+    expected_contains:
+      - "mean"
+      - "standard deviation"
+    expected_code_execution: true
+    expected_calculations:
+      - mean: 30
+      - std: 15.81
+    metrics:
+      - response_time
+      - calculation_accuracy
+
+  - id: test_visualization
+    name: "Visualization Request"
+    agent: data-analyst
+    input: "Create a bar chart showing sales by region: North: 500k, South: 300k, East: 450k, West: 400k"
+    expected_contains:
+      - "chart"
+      - "visualization"
+    expected_code_execution: true
+    expected_output_type: "image"
+    metrics:
+      - response_time
+      - visualization_quality
+
+evaluation_criteria:
+  response_time_threshold: 10000  # milliseconds
+  min_analysis_depth: 0.8
+  min_insight_quality: 0.75
+  calculation_accuracy_tolerance: 0.01

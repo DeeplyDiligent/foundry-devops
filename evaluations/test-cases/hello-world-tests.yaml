@@ -1,0 +1,39 @@
+# Evaluation Test Cases for Hello World Agent
+
+test_cases:
+  - id: test_greeting_1
+    name: "Basic Hello Test"
+    agent: hello-world
+    input: "Hello!"
+    expected_contains:
+      - "hello"
+      - "help"
+    metrics:
+      - response_time
+      - token_count
+      - sentiment_positive
+
+  - id: test_greeting_2
+    name: "Good Morning Test"
+    agent: hello-world
+    input: "Good morning"
+    expected_contains:
+      - "morning"
+    metrics:
+      - response_time
+      - token_count
+
+  - id: test_help_request
+    name: "Help Request Test"
+    agent: hello-world
+    input: "Can you help me?"
+    expected_contains:
+      - "help"
+    metrics:
+      - response_time
+      - relevance_score
+
+evaluation_criteria:
+  response_time_threshold: 3000  # milliseconds
+  min_relevance_score: 0.7
+  max_tokens: 500

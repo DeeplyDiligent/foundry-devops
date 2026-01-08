@@ -1,0 +1,26 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_data_analysis
+  actions:
+    - kind: InvokeAzureAgent
+      id: action_analyze_data
+      conversationId: =System.ConversationId
+      agent:
+        name: data-analyst
+      input:
+        messages: =System.LastMessage
+      output:
+        autoSend: false
+    - kind: InvokeAzureAgent
+      id: action_generate_report
+      conversationId: =System.ConversationId
+      agent:
+        name: data-analyst
+      input:
+        messages: "Based on the analysis, generate a comprehensive report with visualizations."
+      output:
+        autoSend: true
+id: data-analysis-workflow
+name: Data Analysis Workflow
+description: "Orchestrates data analysis and report generation"

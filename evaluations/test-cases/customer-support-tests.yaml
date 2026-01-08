@@ -1,0 +1,56 @@
+# Evaluation Test Cases for Customer Support Agent
+
+test_cases:
+  - id: test_support_1
+    name: "Product Question"
+    agent: customer-support
+    input: "How do I reset my password?"
+    expected_contains:
+      - "password"
+      - "reset"
+    expected_actions:
+      - "search_knowledge_base"
+    metrics:
+      - response_time
+      - accuracy_score
+      - helpfulness_score
+
+  - id: test_support_2
+    name: "Billing Question"
+    agent: customer-support
+    input: "I was charged twice for my subscription"
+    expected_contains:
+      - "billing"
+      - "charge"
+    sentiment: "negative"
+    metrics:
+      - response_time
+      - empathy_score
+      - resolution_confidence
+
+  - id: test_support_3
+    name: "Feature Request"
+    agent: customer-support
+    input: "Do you support dark mode?"
+    expected_contains:
+      - "feature"
+    metrics:
+      - response_time
+      - information_completeness
+
+  - id: test_support_4
+    name: "Technical Issue"
+    agent: customer-support
+    input: "The app keeps crashing when I try to upload files"
+    expected_actions:
+      - "search_knowledge_base"
+      - "escalate_if_needed"
+    metrics:
+      - response_time
+      - troubleshooting_quality
+
+evaluation_criteria:
+  response_time_threshold: 5000  # milliseconds
+  min_accuracy_score: 0.8
+  min_helpfulness_score: 0.75
+  min_empathy_score: 0.7

@@ -1,0 +1,75 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+      - prod
+  workflow_dispatch:
+
+env:
+  AZURE_PROJECT_ENDPOINT: ${{ secrets.PROD_AZURE_PROJECT_ENDPOINT }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ENVIRONMENT: prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Agent Definitions
+        run: |
+          python scripts/validate_yamls.py --type agents
+
+      - name: Validate Workflow Definitions
+        run: |
+          python scripts/validate_yamls.py --type workflows
+
+      - name: Deploy Agents (with approval)
+        run: |
+          python scripts/deploy.py --environment prod --type agents
+
+      - name: Deploy Workflows (with approval)
+        run: |
+          python scripts/deploy.py --environment prod --type workflows
+
+      - name: Run Smoke Tests
+        if: success()
+        run: |
+          python scripts/run_evaluations.py --environment prod --suite smoke
+
+      - name: Run Full Evaluations
+        if: success()
+        run: |
+          python scripts/run_evaluations.py --environment prod --suite full
+
+      - name: Upload Evaluation Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-results-prod
+          path: evaluations/results/
+          retention-days: 90
