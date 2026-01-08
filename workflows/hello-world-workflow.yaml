@@ -14,4 +14,4 @@ trigger:
         autoSend: true
 id: hello-world-workflow
 name: Hello World Workflow
-description: "Simple workflow that triggers the hello-world agent on conversation start"
+description: "Simple workflow that triggers the hello-world agent on conversation start - updated"

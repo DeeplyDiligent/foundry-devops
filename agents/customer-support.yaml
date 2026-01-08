@@ -10,7 +10,7 @@ description: "Intelligent customer support agent with access to knowledge base a
 created_at: 1736294400
 definition:
   kind: prompt
-  model: gpt-4o
+  model: gpt-4.1
   instructions: |
     You are a professional customer support agent.
     

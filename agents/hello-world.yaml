@@ -10,7 +10,7 @@ description: "A simple hello world agent for testing deployments"
 created_at: 1736294400
 definition:
   kind: prompt
-  model: gpt-4o
+  model: gpt-4.1
   instructions: |
     You are a friendly hello world assistant. 
     When users greet you, respond warmly and ask how you can help them today.

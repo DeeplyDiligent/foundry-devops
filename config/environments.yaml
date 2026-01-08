@@ -1,0 +1,19 @@
+# Environment Configuration
+
+# Development
+dev:
+  azure_project_endpoint: "https://sweeden-test.services.ai.azure.com/api/projects/swe-proj"
+  resource_group: "Dev"
+  subscription_id: "${AZURE_SUBSCRIPTION_ID}"
+  
+# Test
+test:
+  azure_project_endpoint: "https://sweeden-test.services.ai.azure.com/api/projects/swe-proj-test"
+  resource_group: "rg-foundry-test"
+  subscription_id: "${AZURE_SUBSCRIPTION_ID}"
+
+# Production
+prod:
+  azure_project_endpoint: "https://sweeden-test.services.ai.azure.com/api/projects/swe-proj-prod"
+  resource_group: "rg-foundry-prod"
+  subscription_id: "${AZURE_SUBSCRIPTION_ID}"

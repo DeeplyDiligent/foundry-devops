@@ -50,11 +50,11 @@ jobs:
 
       - name: Deploy Agents (with approval)
         run: |
-          python scripts/deploy.py --environment prod --type agents
+          python scripts/deployment/deploy-agents-and-workflows.py --environment prod --type agents
 
       - name: Deploy Workflows (with approval)
         run: |
-          python scripts/deploy.py --environment prod --type workflows
+          python scripts/deployment/deploy-agents-and-workflows.py --environment prod --type workflows
 
       - name: Run Smoke Tests
         if: success()

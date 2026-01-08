@@ -49,11 +49,11 @@ jobs:
 
       - name: Deploy Agents
         run: |
-          python scripts/deploy.py --environment dev --type agents
+          python scripts/deployment/deploy-agents-and-workflows.py --environment dev --type agents
 
       - name: Deploy Workflows
         run: |
-          python scripts/deploy.py --environment dev --type workflows
+          python scripts/deployment/deploy-agents-and-workflows.py --environment dev --type workflows
 
       - name: Run Evaluations
         if: success()
