@@ -1,0 +1,3 @@
+{"query": "What is your favorite color?", "ground_truth": "I like purple", "response": "My favorite color is purple because it's vibrant and royal.", "context": "Color preferences"}
+{"query": "Tell me about the sky", "ground_truth": "The sky is blue", "response": "The sky is blue during the day and dark at night.", "context": "Weather and nature"}
+{"query": "What color is a grape?", "ground_truth": "Grapes can be purple", "response": "Grapes come in various colors including purple, green, and red.", "context": "Fruits"}

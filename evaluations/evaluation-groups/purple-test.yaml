@@ -1,0 +1,33 @@
+# Evaluation configuration for purple checker test
+name: purple-detection-test
+description: Test the purple-checker evaluator with purple-workflow
+
+# Evaluation mode: 'dataset' or 'agent'
+mode: agent
+
+# Agent configuration (required for agent mode)
+agent:
+  name: purple-workflow
+
+# Test data
+data:
+  file: evaluations/evaluation-data/purple-test.jsonl
+
+# Evaluators to run
+evaluators:
+  - name: builtin.relevance
+    type: builtin
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+  
+  - name: purple-checker
+    type: custom
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.5
+
+# Output configuration
+output:
+  directory: evaluations/results
+  format: json

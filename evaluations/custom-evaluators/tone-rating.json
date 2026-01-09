@@ -1,0 +1,38 @@
+{
+  "name": "tone-rating",
+  "display_name": "Response Tone Rating",
+  "description": "Rates the tone of the response on a scale from 1 (very poor) to 5 (excellent)",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nEvaluate the tone and professionalism of the response on a scale from 1 to 5.\n\nRating Scale:\n- 5: Excellent - Professional, helpful, warm, and perfectly appropriate\n- 4: Good - Professional and appropriate with minor tone issues\n- 3: Acceptable - Adequate tone but could be improved (slightly cold, overly casual, etc.)\n- 2: Poor - Tone issues that detract from the response (rude, overly casual, condescending, etc.)\n- 1: Very Poor - Inappropriate tone (hostile, offensive, unprofessional)\n\nConsider:\n- Professionalism and courtesy\n- Helpfulness and engagement\n- Appropriateness for the context\n- Clarity and friendliness\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <integer from 1 to 5>,\n    \"reason\": \"<brief explanation for the tone rating>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "tone_rating": {
+        "type": "ordinal",
+        "desirable_direction": "increase",
+        "min_value": 1,
+        "max_value": 5
+      }
+    }
+  }
+}

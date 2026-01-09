@@ -1,0 +1,35 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_wf
+  actions:
+    - kind: InvokeAzureAgent
+      id: action-1767935673758
+      conversationId: =System.ConversationId
+      agent:
+        name: new
+      input: {}
+      output:
+        autoSend: false
+        responseObject: Local:financialadviceasked
+    - kind: ConditionGroup
+      conditions:
+        - condition: =financialadviceasked = "true"
+          actions:
+            - kind: SendActivity
+              activity: You have asked financial advice - halting now
+              id: action-1767936164531
+          id: if-action-1767936135402-0
+      id: action-1767936135402
+      elseActions:
+        - kind: InvokeAzureAgent
+          id: action-1767936183033
+          conversationId: =System.ConversationId
+          agent:
+            name: hello-world
+          input: {}
+          output:
+            autoSend: true
+id: ""
+name: financial-advice-guardrail
+description: ""

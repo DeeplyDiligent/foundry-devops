@@ -1,0 +1,39 @@
+{
+  "name": "purple-checker",
+  "display_name": "Purple Detection",
+  "description": "Evaluates whether the input or output contains the word 'purple'",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nif the input or output contains the word purple - pass this evaluation (1) - otherwise fail it (0)\n---\n### Input:\nQuery:\n{{query}}\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <float 0 or 1>,\n    \"reason\": \"<brief explanation for the result>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.1
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "purple_detection": {
+        "type": "continuous",
+        "desirable_direction": "increase",
+        "min_value": 0,
+        "max_value": 1
+      }
+    }
+  }
+}

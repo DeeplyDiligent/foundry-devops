@@ -1,0 +1,38 @@
+{
+  "name": "accuracy-rating",
+  "display_name": "Response Accuracy Rating",
+  "description": "Rates the factual accuracy of the response on a scale from 1 (very inaccurate) to 5 (highly accurate)",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nEvaluate the factual accuracy and correctness of the response on a scale from 1 to 5.\n\nRating Scale:\n- 5: Highly Accurate - All information is correct and well-supported\n- 4: Mostly Accurate - Information is correct with minor inaccuracies or omissions\n- 3: Partially Accurate - Mix of correct and incorrect information\n- 2: Mostly Inaccurate - Significant errors or misleading information\n- 1: Very Inaccurate - Fundamentally wrong or completely misleading\n\nConsider:\n- Factual correctness\n- Up-to-date information\n- Logical consistency\n- Technical accuracy (if applicable)\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <integer from 1 to 5>,\n    \"reason\": \"<brief explanation for the accuracy rating>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "accuracy_rating": {
+        "type": "ordinal",
+        "desirable_direction": "increase",
+        "min_value": 1,
+        "max_value": 5
+      }
+    }
+  }
+}

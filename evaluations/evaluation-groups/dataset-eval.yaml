@@ -1,0 +1,36 @@
+# Evaluation configuration for dataset mode
+name: dataset-quality-evaluation
+description: Evaluate pre-existing responses from dataset
+
+# Evaluation mode: 'dataset' or 'agent'
+mode: dataset
+
+# Test data (must include response field for dataset mode)
+data:
+  file: evaluations/evaluation-data/data-sample.jsonl
+
+# Evaluators to run
+evaluators:
+  # Built-in evaluators
+  - name: builtin.relevance
+    type: builtin
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+  
+  - name: builtin.coherence
+    type: builtin
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+  
+  - name: builtin.fluency
+    type: builtin
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+
+# Output configuration
+output:
+  directory: evaluations/results
+  format: json

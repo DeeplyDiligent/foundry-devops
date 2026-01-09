@@ -1,0 +1,39 @@
+{
+  "name": "completeness-checker",
+  "display_name": "Response Completeness",
+  "description": "Evaluates whether the response provides a complete answer to the query",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nEvaluate whether the response provides a complete and thorough answer.\n\nCriteria:\n- Does the response address all parts of the query?\n- Is sufficient detail provided?\n- Are important aspects missing?\n\nScore:\n- 1.0: Complete answer, all aspects addressed\n- 0.7: Mostly complete, minor aspects missing\n- 0.5: Partially complete, some important aspects missing\n- 0.0: Incomplete, major aspects not addressed\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <float between 0 and 1>,\n    \"reason\": \"<brief explanation for the completeness score>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.1
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "completeness": {
+        "type": "continuous",
+        "desirable_direction": "increase",
+        "min_value": 0,
+        "max_value": 1
+      }
+    }
+  }
+}

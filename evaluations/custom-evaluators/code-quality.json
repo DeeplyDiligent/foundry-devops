@@ -1,0 +1,39 @@
+{
+  "name": "code-quality-checker",
+  "display_name": "Code Quality Assessment",
+  "description": "Evaluates the quality of code in the response (if applicable)",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nIf the response contains code, evaluate its quality. If no code is present, return 1.0.\n\nCode Quality Criteria:\n- Is the code syntactically correct?\n- Does it follow best practices?\n- Is it well-structured and readable?\n- Are there proper comments/documentation?\n- Does it handle edge cases?\n\nScore:\n- 1.0: High quality code or no code present\n- 0.7: Good code with minor issues\n- 0.5: Acceptable code with some problems\n- 0.0: Poor quality code with major issues\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <float between 0 and 1>,\n    \"reason\": \"<brief explanation for the code quality score>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.1
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "code_quality": {
+        "type": "continuous",
+        "desirable_direction": "increase",
+        "min_value": 0,
+        "max_value": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_purple
+  actions:
+    - kind: InvokeAzureAgent
+      id: action_purple_agent
+      conversationId: =System.ConversationId
+      agent:
+        name: purple-agent
+      input:
+        messages: =System.LastMessage
+      output:
+        autoSend: true
+id: purple-workflow
+name: Purple Workflow
+description: "Workflow that triggers the purple-agent on conversation start"
+

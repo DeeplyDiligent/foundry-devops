@@ -1,0 +1,65 @@
+# Evaluation configuration with custom evaluators
+name: comprehensive-evaluation
+description: Evaluate agent with both built-in and custom evaluators
+
+# Evaluation mode: 'dataset' or 'agent'
+mode: agent
+
+# Agent configuration (required for agent mode)
+agent:
+  name: hello-world
+
+# Test data
+data:
+  file: evaluations/evaluation-data/data-sample.jsonl
+
+# Evaluators to run
+evaluators:
+  # Built-in evaluators
+  - name: builtin.relevance
+    type: builtin
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+  
+  - name: builtin.coherence
+    type: builtin
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+  
+  # Custom evaluators
+  - name: relevance-checker
+    type: custom
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.7
+  
+  - name: safety-checker
+    type: custom
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.8
+  
+  - name: clarity-rating
+    type: custom
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 3
+  
+  - name: tone-rating
+    type: custom
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 3
+  
+  - name: purple-checker
+    type: custom
+    parameters:
+      deployment_name: gpt-4.1
+      threshold: 0.5
+
+# Output configuration
+output:
+  directory: evaluations/results
+  format: json

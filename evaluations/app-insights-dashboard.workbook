@@ -1,0 +1,308 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Evaluation Dashboard\n---\nComprehensive view of agent evaluation results and performance metrics\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| where timestamp > ago(24h)\n| extend \n    agentName = coalesce(\n        tostring(customDimensions[\"gen_ai.agent.name\"]),\n        tostring(parse_json(tostring(customDimensions[\"internal_properties\"]))[\"gen_ai.agent.name\"]),\n        \"Dataset Evaluations\"\n    ),\n    agentId = tostring(customDimensions[\"gen_ai.agent.id\"]),\n    scoreLabel = tostring(customDimensions[\"gen_ai.evaluation.score.label\"])\n| summarize \n    PassCount = countif(scoreLabel == \"pass\"),\n    FailCount = countif(scoreLabel == \"fail\"),\n    TotalCount = count()\n    by agentName, agentId\n| extend PassRate = round((PassCount * 100.0) / TotalCount, 1)\n| project agentName, agentId, PassRate, PassCount, FailCount, TotalCount\n| order by PassRate desc",
+        "size": 3,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "agentName",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "PassRate",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "blue"
+            },
+            "numberFormat": {
+              "unit": 1,
+              "options": {
+                "style": "decimal"
+              }
+            }
+          },
+          "showBorder": true
+        }
+      },
+      "customWidth": "100",
+      "name": "Summary Metrics"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Pass/Fail Rate Over Time"
+      },
+      "name": "text - pass fail"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "306fa20c-e105-41cc-b056-c6c384a1ea03",
+            "version": "KqlParameterItem/1.0",
+            "name": "agent",
+            "type": 2,
+            "query": "customEvents\r\n| where name == \"gen_ai.evaluation.result\"\r\n| extend agentId = tostring(customDimensions[\"gen_ai.agent.id\"])\r\n| where isnotempty(agentId)\r\n| summarize by agentId\r\n| order by agentId asc",
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 0,
+            "resourceType": "microsoft.insights/components",
+            "value": null
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components"
+      },
+      "name": "parameters - 15"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    agentId = tostring(customDimensions[\"gen_ai.agent.id\"]),\n    scoreLabel = tostring(customDimensions[\"gen_ai.evaluation.score.label\"])\n| summarize \n    PassCount = countif(scoreLabel == \"pass\"),\n    FailCount = countif(scoreLabel == \"fail\"),\n    TotalCount = count()\n    by bin(timestamp, 5m), agentId\n| extend PassRate = round((PassCount * 100.0) / TotalCount, 1)\n| project timestamp, agentId, PassRate\n| order by timestamp asc",
+        "size": 0,
+        "aggregation": 5,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "linechart",
+        "chartSettings": {
+          "group": "agentId",
+          "createOtherGroup": null,
+          "ySettings": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "customWidth": "50",
+      "name": "Pass Rate Over Time by Agent"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    internalProps = parse_json(tostring(customDimensions[\"internal_properties\"])),\n    evaluationName = tostring(customDimensions[\"gen_ai.evaluation.name\"]),\n    scoreLabel = tostring(customDimensions[\"gen_ai.evaluation.score.label\"])\n| extend \n    runId = tostring(internalProps[\"gen_ai.evaluation.run.id\"])\n| summarize \n    PassCount = countif(scoreLabel == \"pass\"),\n    FailCount = countif(scoreLabel == \"fail\"),\n    TotalCount = count(),\n    FirstSeen = min(timestamp)\n    by runId, evaluationName\n| extend PassRate = round((PassCount * 100.0) / TotalCount, 1)\n| project FirstSeen, runId, evaluationName, PassRate, PassCount, FailCount, TotalCount\n| order by FirstSeen desc, evaluationName asc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "linechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "PassRate",
+              "label": "Pass Rate %"
+            }
+          ],
+          "ySettings": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "customWidth": "50",
+      "name": "Pass Rate Trend"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Agent Performance Comparison"
+      },
+      "name": "text - agent comparison"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    score = todouble(customDimensions[\"gen_ai.evaluation.score.value\"]),\n    agentName = tostring(customDimensions[\"gen_ai.agent.name\"]),\n    evaluationName = tostring(customDimensions[\"gen_ai.evaluation.name\"])\n| summarize AvgScore = round(avg(score), 3), Count = count() by agentName, evaluationName\n| order by agentName, evaluationName",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": {
+          "ySettings": {
+            "min": 0,
+            "max": 1
+          }
+        }
+      },
+      "customWidth": "50",
+      "name": "Agent Scores by Evaluator"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    scoreLabel = tostring(customDimensions[\"gen_ai.evaluation.score.label\"]),\n    agentName = tostring(customDimensions[\"gen_ai.agent.name\"])\n| summarize \n    PassCount = countif(scoreLabel == \"pass\"),\n    FailCount = countif(scoreLabel == \"fail\")\n    by agentName\n| extend TotalCount = PassCount + FailCount\n| extend PassRate = round((PassCount * 100.0) / TotalCount, 1)\n| project agentName, PassRate, PassCount, FailCount, TotalCount\n| order by PassRate desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": {
+          "ySettings": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "customWidth": "50",
+      "name": "Agent Pass Rates"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Score Distribution"
+      },
+      "name": "text - distribution"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    score = todouble(customDimensions[\"gen_ai.evaluation.score.value\"]),\n    evaluationName = tostring(customDimensions[\"gen_ai.evaluation.name\"])\n| extend ScoreBucket = case(\n    score < 0.2, \"0.0-0.2\",\n    score < 0.4, \"0.2-0.4\",\n    score < 0.6, \"0.4-0.6\",\n    score < 0.8, \"0.6-0.8\",\n    \"0.8-1.0\"\n)\n| summarize Count = count() by ScoreBucket, evaluationName\n| order by ScoreBucket asc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart"
+      },
+      "customWidth": "50",
+      "name": "Score Distribution"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    evaluationName = tostring(customDimensions[\"gen_ai.evaluation.name\"])\n| summarize Count = count() by evaluationName\n| order by Count desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "piechart"
+      },
+      "customWidth": "50",
+      "name": "Evaluations by Type"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## All Evaluation Runs"
+      },
+      "name": "text - runs"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    internalProps = parse_json(tostring(customDimensions[\"internal_properties\"])),\n    evaluationName = tostring(customDimensions[\"gen_ai.evaluation.name\"]),\n    agentName = tostring(customDimensions[\"gen_ai.agent.name\"]),\n    agentVersion = tostring(parse_json(tostring(customDimensions[\"internal_properties\"]))[\"gen_ai.agent.version\"]),\n    score = todouble(customDimensions[\"gen_ai.evaluation.score.value\"]),\n    scoreLabel = tostring(customDimensions[\"gen_ai.evaluation.score.label\"])\n| extend \n    runId = tostring(internalProps[\"gen_ai.evaluation.run.id\"]),\n    testingCriteria = tostring(internalProps[\"gen_ai.evaluation.testing_criteria.name\"])\n| summarize \n    EvaluationCount = count(),\n    AvgScore = round(avg(score), 3),\n    PassCount = countif(scoreLabel == \"pass\"),\n    FailCount = countif(scoreLabel == \"fail\"),\n    FirstSeen = min(timestamp),\n    LastSeen = max(timestamp)\n    by runId, agentName, agentVersion, testingCriteria\n| extend PassRate = round((PassCount * 100.0) / EvaluationCount, 1)\n| project FirstSeen, LastSeen, runId, agentName, agentVersion, testingCriteria, EvaluationCount, AvgScore, PassRate, PassCount, FailCount\n| order by FirstSeen desc",
+        "size": 1,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "AvgScore",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 1,
+                "palette": "greenRed"
+              }
+            },
+            {
+              "columnMatch": "PassRate",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 100,
+                "palette": "greenRed"
+              }
+            }
+          ]
+        }
+      },
+      "name": "All Runs"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Recent Failed Evaluations"
+      },
+      "name": "text - failures"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where name == \"gen_ai.evaluation.result\"\n| extend \n    evaluationName = tostring(customDimensions[\"gen_ai.evaluation.name\"]),\n    scoreLabel = tostring(customDimensions[\"gen_ai.evaluation.score.label\"]),\n    score = todouble(customDimensions[\"gen_ai.evaluation.score.value\"]),\n    explanation = tostring(customDimensions[\"gen_ai.evaluation.explanation\"]),\n    agentName = tostring(customDimensions[\"gen_ai.agent.name\"]),\n    conversationId = tostring(customDimensions[\"gen_ai.conversation.id\"])\n| where scoreLabel == \"fail\" or score < 0.5\n| project timestamp, agentName, evaluationName, score, scoreLabel, explanation, conversationId\n| order by timestamp desc\n| take 50",
+        "size": 1,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "score",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 1,
+                "palette": "redGreen"
+              }
+            }
+          ]
+        }
+      },
+      "name": "Failed Evaluations"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/fce27326-d5b1-4a1e-b77c-5a869a831de1/resourceGroups/Dev/providers/microsoft.insights/components/swe-proj-appinsights-4650"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

@@ -1,0 +1,39 @@
+{
+  "name": "relevance-checker",
+  "display_name": "Response Relevance",
+  "description": "Evaluates whether the response is relevant to the user's query",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nEvaluate whether the response is relevant and directly addresses the user's query.\n\nCriteria:\n- Does the response answer the question asked?\n- Is the information provided appropriate to the query?\n- Does the response stay on topic?\n\nScore:\n- 1.0: Highly relevant, directly answers the query\n- 0.5: Partially relevant, somewhat addresses the query\n- 0.0: Not relevant, does not address the query\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <float between 0 and 1>,\n    \"reason\": \"<brief explanation for the relevance score>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.1
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "relevance": {
+        "type": "continuous",
+        "desirable_direction": "increase",
+        "min_value": 0,
+        "max_value": 1
+      }
+    }
+  }
+}

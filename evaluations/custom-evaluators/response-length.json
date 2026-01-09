@@ -1,0 +1,39 @@
+{
+  "name": "response-length-checker",
+  "display_name": "Response Length Appropriateness",
+  "description": "Evaluates whether the response length is appropriate for the query",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nEvaluate whether the response length is appropriate for the query.\n\nCriteria:\n- Is the response too brief/terse?\n- Is the response unnecessarily verbose?\n- Does the length match the complexity of the query?\n\nScore:\n- 1.0: Appropriate length for the query\n- 0.5: Slightly too short or too long\n- 0.0: Significantly inappropriate length (way too short or excessively long)\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <float between 0 and 1>,\n    \"reason\": \"<brief explanation for the length appropriateness score>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.1
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "length_appropriateness": {
+        "type": "continuous",
+        "desirable_direction": "increase",
+        "min_value": 0,
+        "max_value": 1
+      }
+    }
+  }
+}

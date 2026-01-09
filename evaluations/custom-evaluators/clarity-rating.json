@@ -1,0 +1,38 @@
+{
+  "name": "clarity-rating",
+  "display_name": "Response Clarity Rating",
+  "description": "Rates the clarity and understandability of the response on a scale from 1 (very unclear) to 5 (very clear)",
+  "evaluator_type": "custom",
+  "categories": [
+    "quality"
+  ],
+  "definition": {
+    "type": "prompt",
+    "prompt_text": "### Instructions:\nEvaluate how clear and understandable the response is on a scale from 1 to 5.\n\nRating Scale:\n- 5: Very Clear - Easy to understand, well-structured, concise\n- 4: Clear - Understandable with good structure and flow\n- 3: Moderately Clear - Understandable but could be better organized or explained\n- 2: Unclear - Confusing, poorly structured, or difficult to follow\n- 1: Very Unclear - Incomprehensible, incoherent, or extremely confusing\n\nConsider:\n- Logical structure and organization\n- Use of clear language\n- Proper explanations and examples\n- Conciseness without sacrificing clarity\n---\n### Input:\nQuery:\n{{query}}\n\nResponse:\n{{response}}\n---\n### Output Format (JSON):\n{\n    \"result\": <integer from 1 to 5>,\n    \"reason\": \"<brief explanation for the clarity rating>\"\n}",
+    "init_parameters": {
+      "properties": {
+        "deployment_name": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5
+        }
+      },
+      "required": [
+        "deployment_name",
+        "threshold"
+      ],
+      "type": "object"
+    },
+    "metrics": {
+      "clarity_rating": {
+        "type": "ordinal",
+        "desirable_direction": "increase",
+        "min_value": 1,
+        "max_value": 5
+      }
+    }
+  }
+}
