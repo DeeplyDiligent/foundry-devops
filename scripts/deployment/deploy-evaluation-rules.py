@@ -9,10 +9,14 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import List, Optional
+import warnings
 import yaml
 
 from azure.identity.aio import DefaultAzureCredential
 from azure.ai.projects.aio import AIProjectClient
+
+# Suppress Pydantic serialization warnings from Azure SDK
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic.main")
 
 
 def load_environment_config(environment: str) -> dict:
