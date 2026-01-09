@@ -190,17 +190,64 @@ test_cases:
 
 ## 🛠️ Manual Deployment
 
-Deploy manually using the scripts:
+### Deployment Scripts
+
+Deploy agents, workflows, evaluators, and evaluation rules using these scripts:
 
 ```bash
-# Deploy agents to dev
+# Activate virtual environment (if using one)
+source venv/bin/activate
+
+# Deploy agents and workflows
 python scripts/deployment/deploy-agents-and-workflows.py --environment dev --type agents
+python scripts/deployment/deploy-agents-and-workflows.py --environment dev --type workflows
+python scripts/deployment/deploy-agents-and-workflows.py --environment dev --type all
 
-# Deploy workflows to test
-python scripts/deployment/deploy-agents-and-workflows.py --environment test --type workflows
+# Deploy custom evaluators
+python scripts/deployment/deploy-evaluators.py --environment dev
 
-# Deploy everything to prod
-python scripts/deployment/deploy-agents-and-workflows.py --environment prod --type all
+# Deploy evaluation rules (continuous evaluation)
+# List all evaluation rules
+python scripts/deployment/deploy-evaluation-rules.py --list
+
+# Create a new evaluation rule for an agent
+python scripts/deployment/deploy-evaluation-rules.py \
+  --environment dev \
+  --agent purple-workflow \
+  --evaluators builtin.relevance builtin.coherence purple-checker
+
+# Enable/disable evaluation rules
+python scripts/deployment/deploy-evaluation-rules.py --enable continuous_evaluation_hello-world_2026-01-07
+python scripts/deployment/deploy-evaluation-rules.py --disable continuous_evaluation_hello-world_2026-01-07
+
+# Delete an evaluation rule
+python scripts/deployment/deploy-evaluation-rules.py --delete continuous_evaluation_hello-world_2026-01-07
+
+# Validate YAML files before deployment
+python scripts/deployment/validate_yamls.py
+```
+
+### Runtime Scripts
+
+Run evaluations and read conversation history:
+
+```bash
+# Run evaluation on an agent with a test dataset
+python scripts/runtime/run_evaluation.py --config evaluations/evaluation-groups/purple-test.yaml
+
+# Run evaluation with command-line arguments
+python scripts/runtime/run_evaluation.py \
+  --environment dev \
+  --mode agent \
+  --agent hello-world \
+  --data evaluations/evaluation-data/purple-test.jsonl \
+  --evaluators builtin.relevance builtin.coherence \
+  --deployment gpt-4.1
+
+# Read conversation history
+python scripts/runtime/read_conversation.py \
+  --environment dev \
+  --conversation-id <conversation-id>
 ```
 
 ## 📈 Monitoring & Results
