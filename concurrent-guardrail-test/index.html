@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Interpreter Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            height: 100%;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            height: 100vh; /* Fallback */
+            height: 100dvh; /* Dynamic viewport height - adjusts for keyboard */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            padding-bottom: 70px; /* Space for timing panel */
+            min-height: 0;
+        }
+        
+        h1 {
+            color: #58a6ff;
+            margin-bottom: 20px;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        
+        .chat-container {
+            flex: 1;
+            min-height: 0;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+        }
+        
+        .message-header {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #58a6ff;
+        }
+        
+        .code-block {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #79c0ff;
+        }
+        
+        .code-header {
+            color: #8b949e;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .console-output {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-left: 4px solid #f85149;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #ff7b72;
+        }
+        
+        .console-success {
+            border-left-color: #3fb950;
+            color: #7ee787;
+        }
+        
+        .code-block .code-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .console-output .console-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .assistant-message {
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 10px;
+            background: #161b22;
+            border-radius: 6px;
+            border-left: 4px solid #58a6ff;
+        }
+        
+        .assistant-message ul, .assistant-message ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .assistant-message li {
+            margin: 5px 0;
+        }
+        
+        .assistant-message p {
+            margin: 10px 0;
+        }
+        
+        .assistant-message code {
+            background: #0d1117;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #79c0ff;
+        }
+        
+        .assistant-message pre {
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .assistant-message pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        .assistant-message table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .assistant-message th,
+        .assistant-message td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #30363d;
+        }
+        
+        .assistant-message th {
+            background: #161b22;
+            font-weight: 600;
+            color: #58a6ff;
+            border-bottom: 2px solid #30363d;
+        }
+        
+        .assistant-message tr:hover {
+            background: #161b22;
+        }
+        
+        .code-block {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #79c0ff;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        
+        .code-block .code-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .code-header {
+            color: #8b949e;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .console-output {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-left: 4px solid #f85149;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #ff7b72;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        
+        #messageInput {
+            flex: 1 !important;
+            padding: 12px 16px !important;
+            background: #0d1117 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 6px !important;
+            color: #c9d1d9 !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        }
+        
+        #messageInput:focus {
+            outline: none !important;
+            border-color: #58a6ff !important;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1) !important;
+        }
+        
+        #messageInput::placeholder {
+            color: #6e7681 !important;
+        }
+        
+        button {
+            padding: 12px 32px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        
+        button:hover {
+            background: #2ea043;
+        }
+        
+        button:disabled {
+            background: #30363d;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #30363d;
+            border-top-color: #58a6ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status {
+            padding: 8px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 10px;
+        }
+        
+        .status.active {
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+        
+        .settings-btn {
+            padding: 8px 16px;
+            background: #21262d;
+        }
+        
+        .settings-btn:hover {
+            background: #30363d;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 24px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 16px;
+        }
+        
+        .modal-label {
+            display: block;
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .modal textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+        
+        .modal textarea:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .modal-buttons button {
+            padding: 10px 20px;
+        }
+        
+        /* Waterfall Timing Chart Styles */
+        .timing-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            max-height: 300px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+        
+        .timing-panel.collapsed {
+            transform: translateY(calc(100% - 40px));
+        }
+        
+        .timing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #21262d;
+            border-bottom: 1px solid #30363d;
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .timing-header h3 {
+            color: #58a6ff;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .timing-header .toggle-btn {
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 10px;
+        }
+        
+        .timing-content {
+            padding: 15px 20px;
+        }
+        
+        .waterfall-chart {
+            margin-bottom: 15px;
+        }
+        
+        .waterfall-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .waterfall-label {
+            width: 180px;
+            color: #8b949e;
+            flex-shrink: 0;
+        }
+        
+        .waterfall-bar-container {
+            flex: 1;
+            height: 24px;
+            background: #0d1117;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .waterfall-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            font-size: 11px;
+            color: white;
+            white-space: nowrap;
+            min-width: 2px;
+        }
+        
+        .waterfall-bar.guardrail {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+        
+        .waterfall-bar.workflow {
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+        }
+        
+        .event-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            top: 8px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        .event-dot:hover {
+            transform: scale(1.5);
+            z-index: 10;
+        }
+        
+        .event-dot.text-delta {
+            background: #8b5cf6;
+        }
+        
+        .event-dot.text-done {
+            background: #a78bfa;
+        }
+        
+        .event-dot.item-added {
+            background: #3b82f6;
+        }
+        
+        .event-dot.item-done {
+            background: #60a5fa;
+        }
+        
+        .event-dot.response-created {
+            background: #10b981;
+        }
+        
+        .event-dot.response-done {
+            background: #34d399;
+        }
+        
+        .event-dot.unknown {
+            background: #6b7280;
+        }
+        
+        .event-dot.buffered {
+            border: 2px solid #f59e0b;
+        }
+        
+        .waterfall-bar.buffer {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        
+        .waterfall-bar.first-chunk {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        
+        .chunk-tooltip {
+            position: absolute;
+            background: #21262d;
+            border: 1px solid #30363d;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #c9d1d9;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+            transform: translateY(-100%);
+            top: -5px;
+        }
+        
+        .timing-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #30363d;
+        }
+        
+        .timing-stat {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .timing-stat-label {
+            font-size: 11px;
+            color: #8b949e;
+        }
+        
+        .timing-stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #c9d1d9;
+        }
+        
+        .timing-stat-value.passed {
+            color: #3fb950;
+        }
+        
+        .timing-stat-value.failed {
+            color: #f85149;
+        }
+        
+        .no-timing {
+            color: #6e7681;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .clear-timings-btn {
+            padding: 4px 12px;
+            font-size: 12px;
+            background: #21262d;
+        }
+        
+        .clear-timings-btn:hover {
+            background: #30363d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 DeepChat</h1>
+            <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+        </div>
+
+        <div id="chatContainer" class="chat-container"></div>
+        
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Type your message here..."
+                onkeypress="if(event.key === 'Enter') sendMessage()"
+            />
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    
+    <!-- Timing Waterfall Panel -->
+    <div id="timingPanel" class="timing-panel collapsed">
+        <div class="timing-header" onclick="toggleTimingPanel()">
+            <h3>⏱️ Request Timing Waterfall</h3>
+            <div>
+                <button class="clear-timings-btn" onclick="event.stopPropagation(); clearTimings()">Clear</button>
+                <span class="toggle-btn" id="timingToggle">▲</span>
+            </div>
+        </div>
+        <div class="timing-content" id="timingContent">
+            <div class="no-timing">No timing data yet. Send a message to see the waterfall.</div>
+        </div>
+    </div>
+    
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">⚙️ Custom Instructions</div>
+            <label class="modal-label">Set custom instructions for the AI assistant:</label>
+            <textarea id="customInstructions" placeholder="Example: You are a helpful coding assistant. Always explain your answers clearly and provide examples."></textarea>
+            <div class="modal-buttons">
+                <button onclick="closeSettings()">Cancel</button>
+                <button onclick="saveSettings()" style="background: #238636;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const customInstructionsInput = document.getElementById('customInstructions');
+        
+        let currentMessage = null;
+        let currentCode = '';
+        let currentConsole = '';
+        let currentText = '';
+        let latestTiming = null;
+        
+        const timingPanel = document.getElementById('timingPanel');
+        const timingContent = document.getElementById('timingContent');
+        const timingToggle = document.getElementById('timingToggle');
+        
+        function toggleTimingPanel() {
+            timingPanel.classList.toggle('collapsed');
+            timingToggle.textContent = timingPanel.classList.contains('collapsed') ? '▲' : '▼';
+        }
+        
+        function clearTimings() {
+            fetch('/timings/clear')
+                .then(() => {
+                    timingContent.innerHTML = '<div class="no-timing">No timing data yet. Send a message to see the waterfall.</div>';
+                })
+                .catch(e => console.error('Error clearing timings:', e));
+        }
+        
+        function renderTimingWaterfall(timing) {
+            if (!timing) {
+                timingContent.innerHTML = '<div class="no-timing">No timing data yet. Send a message to see the waterfall.</div>';
+                return;
+            }
+            
+            const totalDuration = timing.total_duration_ms || 1;
+            const scale = 100 / totalDuration; // percentage per ms
+            
+            // Calculate positions and widths
+            const guardrailStart = timing.guardrail_start && timing.request_start 
+                ? (timing.guardrail_start - timing.request_start) * 1000 
+                : 0;
+            const guardrailWidth = timing.guardrail_duration_ms || 0;
+            
+            const workflowStart = timing.workflow_start && timing.request_start 
+                ? (timing.workflow_start - timing.request_start) * 1000 
+                : 0;
+            const workflowWidth = timing.workflow_total_duration_ms || 0;
+            const firstChunkTime = timing.workflow_time_to_first_chunk_ms || 0;
+            
+            const bufferStart = timing.buffer_start && timing.request_start 
+                ? (timing.buffer_start - timing.request_start) * 1000 
+                : 0;
+            const bufferWidth = timing.buffer_duration_ms || 0;
+            const bufferEndMs = bufferStart + bufferWidth;
+            
+            // Helper to get CSS class from event type
+            function getEventDotClass(eventType) {
+                if (!eventType) return 'unknown';
+                const type = eventType.toLowerCase();
+                if (type.includes('text_delta')) return 'text-delta';
+                if (type.includes('text_done')) return 'text-done';
+                if (type.includes('item_added')) return 'item-added';
+                if (type.includes('item_done')) return 'item-done';
+                if (type.includes('response_created') || type.includes('created')) return 'response-created';
+                if (type.includes('response_done') || type.includes('completed')) return 'response-done';
+                return 'unknown';
+            }
+            
+            // Generate event dots HTML
+            const chunks = timing.workflow_chunks || [];
+            let eventDotsHtml = '';
+            chunks.forEach((chunk, index) => {
+                const chunkStartMs = workflowStart + chunk.time_from_start_ms;
+                const isBuffered = chunkStartMs < bufferEndMs;
+                const dotClass = getEventDotClass(chunk.event_type);
+                const bufferedClass = isBuffered ? ' buffered' : '';
+                
+                // Build tooltip text
+                let tooltipParts = [
+                    `#${chunk.index}`,
+                    `${chunk.time_from_start_ms.toFixed(0)}ms`,
+                    chunk.event_type || 'unknown'
+                ];
+                if (chunk.size > 0) tooltipParts.push(`${chunk.size} chars`);
+                if (chunk.item_type) tooltipParts.push(`item: ${chunk.item_type}`);
+                if (chunk.action_id) tooltipParts.push(`action: ${chunk.action_id}`);
+                const tooltipText = tooltipParts.join(' | ');
+                
+                eventDotsHtml += `
+                    <div class="event-dot ${dotClass}${bufferedClass}" 
+                         style="left: calc(${chunkStartMs * scale}% - 4px);"
+                         title="${tooltipText}">
+                    </div>`;
+            });
+            
+            const html = `
+                <div class="waterfall-chart">
+                    <div class="waterfall-row">
+                        <div class="waterfall-label">🔵 Blue Guardrail</div>
+                        <div class="waterfall-bar-container">
+                            <div class="waterfall-bar guardrail" 
+                                 style="left: ${guardrailStart * scale}%; width: ${Math.max(guardrailWidth * scale, 1)}%;">
+                                ${guardrailWidth.toFixed(0)}ms
+                            </div>
+                        </div>
+                    </div>
+                    <div class="waterfall-row">
+                        <div class="waterfall-label">🟣 Workflow Events (${chunks.length})</div>
+                        <div class="waterfall-bar-container">
+                            ${eventDotsHtml}
+                        </div>
+                    </div>
+                    <div class="waterfall-row">
+                        <div class="waterfall-label">🟣 Purple Workflow Total</div>
+                        <div class="waterfall-bar-container">
+                            <div class="waterfall-bar workflow" 
+                                 style="left: ${workflowStart * scale}%; width: ${Math.max(workflowWidth * scale, 1)}%;">
+                                ${workflowWidth.toFixed(0)}ms
+                            </div>
+                        </div>
+                    </div>
+                    <div class="waterfall-row">
+                        <div class="waterfall-label">⏳ Buffer Wait</div>
+                        <div class="waterfall-bar-container">
+                            <div class="waterfall-bar buffer" 
+                                 style="left: ${bufferStart * scale}%; width: ${Math.max(bufferWidth * scale, 1)}%;">
+                                ${bufferWidth.toFixed(0)}ms
+                            </div>
+                        </div>
+                    </div>
+                    <div class="waterfall-row">
+                        <div class="waterfall-label">🚀 Time to First Chunk</div>
+                        <div class="waterfall-bar-container">
+                            <div class="waterfall-bar first-chunk" 
+                                 style="left: ${workflowStart * scale}%; width: ${Math.max(firstChunkTime * scale, 1)}%;">
+                                ${firstChunkTime.toFixed(0)}ms
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timing-stats">
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Total Duration</span>
+                        <span class="timing-stat-value">${totalDuration.toFixed(0)}ms</span>
+                    </div>
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Guardrail</span>
+                        <span class="timing-stat-value">${guardrailWidth.toFixed(0)}ms</span>
+                    </div>
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Workflow</span>
+                        <span class="timing-stat-value">${workflowWidth.toFixed(0)}ms</span>
+                    </div>
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Chunks</span>
+                        <span class="timing-stat-value">${chunks.length}</span>
+                    </div>
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Buffered Chunks</span>
+                        <span class="timing-stat-value">${chunks.filter(c => (workflowStart + c.time_from_start_ms) < bufferEndMs).length}</span>
+                    </div>
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Guardrail Result</span>
+                        <span class="timing-stat-value ${timing.guardrail_passed ? 'passed' : 'failed'}">
+                            ${timing.guardrail_passed ? '✓ Passed' : '✗ Failed'}
+                        </span>
+                    </div>
+                    ${timing.guardrail_reason ? `
+                    <div class="timing-stat">
+                        <span class="timing-stat-label">Reason</span>
+                        <span class="timing-stat-value">${timing.guardrail_reason}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            timingContent.innerHTML = html;
+            
+            // Auto-expand panel when new timing arrives
+            if (timingPanel.classList.contains('collapsed')) {
+                toggleTimingPanel();
+            }
+        }
+        
+        // Load custom instructions from localStorage on page load
+        function loadCustomInstructions() {
+            const instructions = localStorage.getItem('customInstructions') || '';
+            customInstructionsInput.value = instructions;
+            
+            // Send to backend
+            if (instructions) {
+                fetch(`/set-instructions?instructions=${encodeURIComponent(instructions)}`)
+                    .catch(e => console.error('Error setting instructions:', e));
+            }
+        }
+        
+        function openSettings() {
+            settingsModal.classList.add('active');
+        }
+        
+        function closeSettings() {
+            settingsModal.classList.remove('active');
+        }
+        
+        function saveSettings() {
+            const instructions = customInstructionsInput.value;
+            localStorage.setItem('customInstructions', instructions);
+            
+            // Send to backend
+            fetch(`/set-instructions?instructions=${encodeURIComponent(instructions)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Instructions saved:', data);
+                    closeSettings();
+                })
+                .catch(e => {
+                    console.error('Error saving instructions:', e);
+                    alert('Error saving instructions');
+                });
+        }
+        
+        // Close modal when clicking outside
+        settingsModal.addEventListener('click', function(e) {
+            if (e.target === settingsModal) {
+                closeSettings();
+            }
+        });
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // Display user message
+            addUserMessage(message);
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Disable input while processing
+            sendBtn.disabled = true;
+            messageInput.disabled = true;
+            
+            // Start SSE connection
+            const eventSource = new EventSource(`/chat?msg=${encodeURIComponent(message)}`);
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleData(data);
+                } catch (e) {
+                    console.error('Error parsing data:', e);
+                }
+            };
+            
+            eventSource.onerror = function() {
+                eventSource.close();
+                sendBtn.disabled = false;
+                messageInput.disabled = false;
+                finalizeCurrentMessage();
+            };
+        }
+        
+        function handleData(data) {
+            if (data.type === 'done') {
+                // Capture timing data
+                if (data.timing) {
+                    latestTiming = data.timing;
+                    renderTimingWaterfall(data.timing);
+                }
+                finalizeCurrentMessage();
+                sendBtn.disabled = false;
+                messageInput.disabled = false;
+                return;
+            }
+            
+            if (data.type === 'code') {
+                if (data.start) {
+                    currentCode = '';
+                    currentMessage = document.createElement('div');
+                    currentMessage.className = 'message';
+                    currentMessage.innerHTML = `
+                        <div class="message-header">💻 Code (${data.format})</div>
+                        <div class="code-block"><div class="code-content"></div></div>
+                    `;
+                    chatContainer.appendChild(currentMessage);
+                } else if (data.content) {
+                    currentCode += data.content;
+                    const codeContent = currentMessage.querySelector('.code-content');
+                    codeContent.textContent = currentCode;
+                } else if (data.end) {
+                    currentMessage = null;
+                    currentCode = '';
+                }
+            } else if (data.type === 'console') {
+                if (data.start) {
+                    currentConsole = '';
+                    currentMessage = document.createElement('div');
+                    currentMessage.className = 'message';
+                    currentMessage.innerHTML = `
+                        <div class="message-header">📟 Console Output</div>
+                        <div class="console-output"><div class="console-content"></div></div>
+                    `;
+                    chatContainer.appendChild(currentMessage);
+                } else if (data.content && data.format === 'output') {
+                    currentConsole += data.content;
+                    const consoleContent = currentMessage.querySelector('.console-content');
+                    consoleContent.textContent = currentConsole;
+                    
+                    // Check if it's an error
+                    if (currentConsole.includes('Error') || currentConsole.includes('cannot access')) {
+                        currentMessage.querySelector('.console-output').classList.remove('console-success');
+                    } else {
+                        currentMessage.querySelector('.console-output').classList.add('console-success');
+                    }
+                } else if (data.end) {
+                    currentMessage = null;
+                    currentConsole = '';
+                }
+            } else if (data.type === 'message') {
+                if (data.start) {
+                    currentText = '';
+                    currentMessage = document.createElement('div');
+                    currentMessage.className = 'message';
+                    currentMessage.innerHTML = `
+                        <div class="message-header">🤖 Assistant</div>
+                        <div class="assistant-message"><div class="message-content"></div></div>
+                    `;
+                    chatContainer.appendChild(currentMessage);
+                } else if (data.content) {
+                    currentText += data.content;
+                    const messageContent = currentMessage.querySelector('.message-content');
+                    messageContent.innerHTML = marked.parse(currentText);
+                } else if (data.end) {
+                    currentMessage = null;
+                    currentText = '';
+                }
+            }
+            
+            // Auto-scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function addUserMessage(message) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            msgDiv.innerHTML = `
+                <div class="message-header">👤 You</div>
+                <div class="assistant-message" style="border-left-color: #a371f7;">
+                    <div class="message-content">${escapeHtml(message)}</div>
+                </div>
+            `;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function finalizeCurrentMessage() {
+            currentMessage = null;
+            currentCode = '';
+            currentConsole = '';
+            currentText = '';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Handle keyboard visibility on mobile
+        function updateHeight() {
+            if (window.visualViewport) {
+                // Check if scrolled to bottom before resize
+                const wasAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 50;
+                
+                const viewport = window.visualViewport;
+                document.body.style.height = viewport.height + 'px';
+                
+                // If was at bottom, scroll to bottom after resize
+                if (wasAtBottom) {
+                    setTimeout(() => {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 100);
+                }
+            }
+        }
+        
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateHeight);
+            updateHeight();
+        }
+        
+        // Clear conversation history and timings on page load (fresh start)
+        fetch('/clear').catch(e => console.error('Error clearing history:', e));
+        fetch('/timings/clear').catch(e => console.error('Error clearing timings:', e));
+        
+        // Load custom instructions on page load
+        loadCustomInstructions();
+        
+        // Focus input on load
+        messageInput.focus();
+    </script>
+</body>
+</html>

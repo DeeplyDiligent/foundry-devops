@@ -1,0 +1,13 @@
+# Agent Framework (v2) - New Foundry Agent Service
+agent-framework-azure-ai>=0.1.0
+
+# Legacy SDKs (can be removed once fully migrated to v2)
+azure-ai-projects>=1.0.0
+azure-ai-agents>=1.1.0
+azure-identity>=1.25.0
+pyyaml>=6.0.1
+
+# Web framework
+fastapi>=0.115.0
+uvicorn>=0.32.0
+openai>=1.50.0

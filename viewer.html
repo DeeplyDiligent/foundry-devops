@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Data Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        h1 {
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 24px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr.expanded {
+            background-color: #e7f3ff;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 13px;
+            color: #212529;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-message {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .badge-workflow {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+
+        .badge-completed {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-in-progress,
+        .badge-in_progress {
+            background: #ffd99b;
+            color: #e65100;
+        }
+
+        .expanded-content {
+            display: none;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .expanded-content.show {
+            display: table-row;
+        }
+
+        .json-viewer-container {
+            padding: 20px;
+            background: #ffffff;
+        }
+
+        .json-viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .json-viewer-title {
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .copy-button {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .copy-button:hover {
+            background: #5568d3;
+        }
+
+        .copy-button.copied {
+            background: #28a745;
+        }
+
+        .json-viewer {
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            overflow-x: auto;
+            border-radius: 6px;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .json-viewer pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .json-key {
+            color: #9cdcfe;
+            font-weight: 500;
+        }
+
+        .json-string {
+            color: #ce9178;
+        }
+
+        .json-number {
+            color: #b5cea8;
+        }
+
+        .json-boolean {
+            color: #569cd6;
+        }
+
+        .json-null {
+            color: #569cd6;
+        }
+
+        .json-brace {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .content-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .seq-number {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .timestamp {
+            color: #212529;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .expand-icon {
+            margin-right: 8px;
+            transition: transform 0.3s;
+            display: inline-block;
+        }
+
+        tr.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .file-input-container {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        input[type="file"] {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .paste-container {
+            margin-top: 15px;
+        }
+
+        .paste-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .paste-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .process-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .process-button:hover {
+            background: #5568d3;
+        }
+
+        .or-divider {
+            margin: 15px 0 10px 0;
+            text-align: center;
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .stats {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .filters {
+            padding: 20px 30px;
+            background: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: white;
+            font-size: 13px;
+            color: #495057;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .clear-filters {
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: auto;
+            transition: background 0.2s;
+        }
+
+        .clear-filters:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Workflow Data Viewer</h1>
+        
+        <div class="file-input-container">
+            <input type="file" id="fileInput" accept=".txt" />
+            
+            <div class="or-divider">── OR ──</div>
+            
+            <div class="paste-container">
+                <textarea 
+                    id="pasteArea" 
+                    class="paste-textarea" 
+                    placeholder="Paste your workflow data here..."
+                ></textarea>
+                <button class="process-button" onclick="processPastedData()">Process Pasted Data</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <span>Total Records: <strong id="totalRecords">0</strong></span>
+            <span style="margin-left: 20px;">Filtered: <strong id="filteredRecords">0</strong></span>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label class="filter-label">Type</label>
+                <select id="typeFilter" class="filter-select">
+                    <option value="">All Types</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Agent</label>
+                <select id="agentFilter" class="filter-select">
+                    <option value="">All Agents</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Item Type</label>
+                <select id="itemTypeFilter" class="filter-select">
+                    <option value="">All Item Types</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Statuses</option>
+                </select>
+            </div>
+            <button class="clear-filters" onclick="clearFilters()">Clear Filters</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Seq</th>
+                        <th>Timestamp</th>
+                        <th>Type</th>
+                        <th>Agent</th>
+                        <th>Item Type</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                        <th>Content</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = [];
+        let filteredData = [];
+        let filters = {
+            type: '',
+            agent: '',
+            itemType: '',
+            status: ''
+        };
+
+        // Load default data.txt file
+        data = `message	{"type":"response.created","sequence_number":1,"response":{"metadata":{},"temperature":null,"top_p":null,"user":null,"service_tier":"auto","model":"","background":true,"tools":[],"tool_choice":"auto","truncation":"auto","id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU","object":"response","status":"in_progress","created_at":1766555863,"error":null,"incomplete_details":null,"output":[],"instructions":"","parallel_tool_calls":true,"conversation":{"id":"conv_fa1c96c5c9a8a5f300YLt52SdG14eJoifIw3VVXxcPYrbDWvkD"},"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"structured_inputs":{}}}	
+16:57:42.194
+message	{"type":"response.in_progress","sequence_number":2,"response":{"metadata":{},"temperature":null,"top_p":null,"user":null,"service_tier":"auto","model":"","background":true,"tools":[],"tool_choice":"auto","truncation":"auto","id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU","object":"response","status":"in_progress","created_at":1766555863,"error":null,"incomplete_details":null,"output":[],"instructions":"","parallel_tool_calls":true,"conversation":{"id":"conv_fa1c96c5c9a8a5f300YLt52SdG14eJoifIw3VVXxcPYrbDWvkD"},"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"structured_inputs":{}}}	
+16:57:42.194
+message	{"type":"response.output_item.added","sequence_number":3,"output_index":0,"item":{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f300k7EjRZXRObRyIXzXyBJyYykLxxkfKDE1","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"InvokeAzureAgent","action_id":"agent1","parent_action_id":"trigger_wf","previous_action_id":"trigger_wf","status":"in_progress"}}	
+16:57:43.702
+message	{"type":"response.output_item.added","sequence_number":4,"output_index":1,"item":{"type":"message","id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","created_by":{"agent":{"type":"agent_id","name":"helllo-world","version":"1"}},"status":"in_progress","role":"assistant","content":[]}}	
+16:57:45.857
+message	{"type":"response.content_part.added","sequence_number":5,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"part":{"type":"output_text","text":"","annotations":[],"logprobs":[]}}	
+16:57:45.857
+message	{"type":"response.output_text.delta","sequence_number":6,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":"Hello"}	
+16:57:45.857
+message	{"type":"response.output_text.delta","sequence_number":7,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":"!"}	
+16:57:45.857
+message	{"type":"response.output_text.delta","sequence_number":8,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" How"}	
+16:57:45.857
+message	{"type":"response.output_text.delta","sequence_number":9,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" can"}	
+16:57:45.869
+message	{"type":"response.output_text.delta","sequence_number":10,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" I"}	
+16:57:45.869
+message	{"type":"response.output_text.delta","sequence_number":11,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" help"}	
+16:57:45.884
+message	{"type":"response.output_text.delta","sequence_number":12,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" you"}	
+16:57:45.884
+message	{"type":"response.output_text.delta","sequence_number":13,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" today"}	
+16:57:45.884
+message	{"type":"response.output_text.delta","sequence_number":14,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":"?"}	
+16:57:45.884
+message	{"type":"response.output_text.delta","sequence_number":15,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"delta":" \uD83D\uDE0A"}	
+16:57:45.897
+message	{"type":"response.output_text.done","sequence_number":16,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"text":"Hello! How can I help you today? \uD83D\uDE0A"}	
+16:57:45.944
+message	{"type":"response.content_part.done","sequence_number":17,"item_id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","output_index":1,"content_index":0,"part":{"type":"output_text","text":"Hello! How can I help you today? \uD83D\uDE0A","annotations":[],"logprobs":[]}}	
+16:57:45.944
+message	{"type":"response.output_item.done","sequence_number":18,"output_index":1,"item":{"type":"message","id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","created_by":{"agent":{"type":"agent_id","name":"helllo-world","version":"1"}},"status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello! How can I help you today? \uD83D\uDE0A","annotations":[],"logprobs":[]}]}}	
+16:57:45.944
+message	{"type":"response.output_item.done","sequence_number":19,"output_index":0,"item":{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f300k7EjRZXRObRyIXzXyBJyYykLxxkfKDE1","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"InvokeAzureAgent","action_id":"agent1","parent_action_id":"trigger_wf","previous_action_id":"trigger_wf","status":"completed"}}	
+16:57:46.190
+message	{"type":"response.output_item.added","sequence_number":20,"output_index":2,"item":{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f300IOqrsVJPztDBuc5132262mgkHLhef4GK","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"InvokeAzureAgent","action_id":"action-1766555617283","parent_action_id":"trigger_wf","previous_action_id":"agent1_Post","status":"in_progress"}}	
+16:57:46.223
+message	{"type":"response.output_item.added","sequence_number":21,"output_index":3,"item":{"type":"message","id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","created_by":{"agent":{"type":"agent_id","name":"helllo-world","version":"1"}},"status":"in_progress","role":"assistant","content":[]}}	
+16:57:47.358
+message	{"type":"response.content_part.added","sequence_number":22,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"part":{"type":"output_text","text":"","annotations":[],"logprobs":[]}}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":23,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":"Hello"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":24,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" again"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":25,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":"!"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":26,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" \uD83D\uDC4B"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":27,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" If"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":28,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" you"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":29,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" have"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":30,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" any"}	
+16:57:47.358
+message	{"type":"response.output_text.delta","sequence_number":31,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" questions"}	
+16:57:47.381
+message	{"type":"response.output_text.delta","sequence_number":32,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" or"}	
+16:57:47.381
+message	{"type":"response.output_text.delta","sequence_number":33,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" need"}	
+16:57:47.381
+message	{"type":"response.output_text.delta","sequence_number":34,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" assistance"}	
+16:57:47.381
+message	{"type":"response.output_text.delta","sequence_number":35,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":","}	
+16:57:47.438
+message	{"type":"response.output_text.delta","sequence_number":36,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" feel"}	
+16:57:47.438
+message	{"type":"response.output_text.delta","sequence_number":37,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" free"}	
+16:57:47.450
+message	{"type":"response.output_text.delta","sequence_number":38,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" to"}	
+16:57:47.464
+message	{"type":"response.output_text.delta","sequence_number":39,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" let"}	
+16:57:47.464
+message	{"type":"response.output_text.delta","sequence_number":40,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" me"}	
+16:57:47.464
+message	{"type":"response.output_text.delta","sequence_number":41,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":" know"}	
+16:57:47.464
+message	{"type":"response.output_text.delta","sequence_number":42,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"delta":"."}	
+16:57:47.464
+message	{"type":"response.output_text.done","sequence_number":43,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"text":"Hello again! \uD83D\uDC4B If you have any questions or need assistance, feel free to let me know."}	
+16:57:47.543
+message	{"type":"response.content_part.done","sequence_number":44,"item_id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","output_index":3,"content_index":0,"part":{"type":"output_text","text":"Hello again! \uD83D\uDC4B If you have any questions or need assistance, feel free to let me know.","annotations":[],"logprobs":[]}}	
+16:57:47.543
+message	{"type":"response.output_item.done","sequence_number":45,"output_index":3,"item":{"type":"message","id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","created_by":{"agent":{"type":"agent_id","name":"helllo-world","version":"1"}},"status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello again! \uD83D\uDC4B If you have any questions or need assistance, feel free to let me know.","annotations":[],"logprobs":[]}]}}	
+16:57:47.543
+message	{"type":"response.output_item.done","sequence_number":46,"output_index":2,"item":{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f300IOqrsVJPztDBuc5132262mgkHLhef4GK","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"InvokeAzureAgent","action_id":"action-1766555617283","parent_action_id":"trigger_wf","previous_action_id":"agent1_Post","status":"completed"}}	
+16:57:47.727
+message	{"type":"response.output_item.added","sequence_number":47,"output_index":4,"item":{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f3006Aodsc8jQlGItsvLxAEqYHONPNDpBDDN","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"SendActivity","action_id":"action-1766545038829","parent_action_id":"trigger_wf","previous_action_id":"action-1766555617283_Post","status":"in_progress"}}	
+16:57:47.757
+message	{"type":"response.output_item.added","sequence_number":48,"output_index":5,"item":{"type":"message","id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"status":"in_progress","role":"assistant","content":[]}}	
+16:57:47.774
+message	{"type":"response.content_part.added","sequence_number":49,"item_id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","output_index":5,"content_index":0,"part":{"type":"output_text","text":"","annotations":[]}}	
+16:57:47.774
+message	{"type":"response.output_text.delta","sequence_number":50,"item_id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","output_index":5,"content_index":0,"delta":"[\n {\n \"Author\": \"helllo-world\",\n \"Content\": [\n {\n \"ContentType\": \"Text\",\n \"ContentValue\": \"Hello! How can I help you today? \\uD83D\\uDE0A\"\n }\n ],\n \"Id\": \"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e\",\n \"Metadata\": {},\n \"Role\": \"assistant\",\n \"Text\": \"Hello! How can I help you today? \\uD83D\\uDE0A\",\n \"__type__\": \"ChatMessage\"\n }\n]"}	
+16:57:47.774
+message	{"type":"response.output_text.done","sequence_number":51,"item_id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","output_index":5,"content_index":0,"text":"[\n {\n \"Author\": \"helllo-world\",\n \"Content\": [\n {\n \"ContentType\": \"Text\",\n \"ContentValue\": \"Hello! How can I help you today? \\uD83D\\uDE0A\"\n }\n ],\n \"Id\": \"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e\",\n \"Metadata\": {},\n \"Role\": \"assistant\",\n \"Text\": \"Hello! How can I help you today? \\uD83D\\uDE0A\",\n \"__type__\": \"ChatMessage\"\n }\n]"}	
+16:57:47.774
+message	{"type":"response.content_part.done","sequence_number":52,"item_id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","output_index":5,"content_index":0,"part":{"type":"output_text","text":"[\n {\n \"Author\": \"helllo-world\",\n \"Content\": [\n {\n \"ContentType\": \"Text\",\n \"ContentValue\": \"Hello! How can I help you today? \\uD83D\\uDE0A\"\n }\n ],\n \"Id\": \"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e\",\n \"Metadata\": {},\n \"Role\": \"assistant\",\n \"Text\": \"Hello! How can I help you today? \\uD83D\\uDE0A\",\n \"__type__\": \"ChatMessage\"\n }\n]","annotations":[]}}	
+16:57:47.774
+message	{"type":"response.output_item.done","sequence_number":53,"output_index":5,"item":{"type":"message","id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"status":"completed","role":"assistant","content":[{"type":"output_text","text":"[\n {\n \"Author\": \"helllo-world\",\n \"Content\": [\n {\n \"ContentType\": \"Text\",\n \"ContentValue\": \"Hello! How can I help you today? \\uD83D\\uDE0A\"\n }\n ],\n \"Id\": \"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e\",\n \"Metadata\": {},\n \"Role\": \"assistant\",\n \"Text\": \"Hello! How can I help you today? \\uD83D\\uDE0A\",\n \"__type__\": \"ChatMessage\"\n }\n]","annotations":[]}]}}	
+16:57:47.774
+message	{"type":"response.output_item.done","sequence_number":54,"output_index":4,"item":{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f3006Aodsc8jQlGItsvLxAEqYHONPNDpBDDN","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"SendActivity","action_id":"action-1766545038829","parent_action_id":"trigger_wf","previous_action_id":"action-1766555617283_Post","status":"completed"}}	
+16:57:47.774
+message	{"type":"response.completed","sequence_number":55,"response":{"metadata":{},"temperature":null,"top_p":null,"user":null,"service_tier":"auto","model":"","background":true,"tools":[],"tool_choice":"auto","truncation":"auto","id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU","object":"response","status":"completed","created_at":1766555863,"error":null,"incomplete_details":null,"output":[{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f300k7EjRZXRObRyIXzXyBJyYykLxxkfKDE1","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"InvokeAzureAgent","action_id":"agent1","parent_action_id":"trigger_wf","previous_action_id":"trigger_wf","status":"completed"},{"type":"message","id":"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e","created_by":{"agent":{"type":"agent_id","name":"helllo-world","version":"1"}},"status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello! How can I help you today? \uD83D\uDE0A","annotations":[],"logprobs":[]}]},{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f300IOqrsVJPztDBuc5132262mgkHLhef4GK","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"InvokeAzureAgent","action_id":"action-1766555617283","parent_action_id":"trigger_wf","previous_action_id":"agent1_Post","status":"completed"},{"type":"message","id":"msg_fa1c96c5c9a8a5f300694b80db88988190bc51ed988197abd1","created_by":{"agent":{"type":"agent_id","name":"helllo-world","version":"1"}},"status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello again! \uD83D\uDC4B If you have any questions or need assistance, feel free to let me know.","annotations":[],"logprobs":[]}]},{"type":"workflow_action","id":"wfa_fa1c96c5c9a8a5f3006Aodsc8jQlGItsvLxAEqYHONPNDpBDDN","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"kind":"SendActivity","action_id":"action-1766545038829","parent_action_id":"trigger_wf","previous_action_id":"action-1766555617283_Post","status":"completed"},{"type":"message","id":"msg_fa1c96c5c9a8a5f300PrLVnFz8W6gBGaxTpWfN76uov1LbH5yy","created_by":{"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"response_id":"wfresp_fa1c96c5c9a8a5f300fmPLLGzxHPkwcm0jUMAFci3pgrAxlFfU"},"status":"completed","role":"assistant","content":[{"type":"output_text","text":"[\n {\n \"Author\": \"helllo-world\",\n \"Content\": [\n {\n \"ContentType\": \"Text\",\n \"ContentValue\": \"Hello! How can I help you today? \\uD83D\\uDE0A\"\n }\n ],\n \"Id\": \"msg_fa1c96c5c9a8a5f300694b80da08488190a9b1b8529f97f55e\",\n \"Metadata\": {},\n \"Role\": \"assistant\",\n \"Text\": \"Hello! How can I help you today? \\uD83D\\uDE0A\",\n \"__type__\": \"ChatMessage\"\n }\n]","annotations":[]}]}],"instructions":"","output_text":"","usage":{"input_tokens":45,"input_tokens_details":{"cached_tokens":0},"output_tokens":33,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":78},"parallel_tool_calls":true,"conversation":{"id":"conv_fa1c96c5c9a8a5f300YLt52SdG14eJoifIw3VVXxcPYrbDWvkD"},"agent":{"type":"agent_id","name":"test-sequential","version":"4"},"structured_inputs":{}}}	
+16:57:47.842`
+
+        fetch('data.txt')
+            .then(response => response.text())
+            .then(data => {
+                parseAndDisplayData(data);
+            })
+            .catch(err => {
+                console.error('Error loading default file:', err);
+                // parseAndDisplayData(data)
+            });
+
+        function processPastedData() {
+            const pasteArea = document.getElementById('pasteArea');
+            const data = pasteArea.value.trim();
+            if (data) {
+                parseAndDisplayData(data);
+            } else {
+                alert('Please paste some data first!');
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    parseAndDisplayData(event.target.result);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function parseAndDisplayData(text) {
+            const lines = text.trim().split('\n');
+            parsedData = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const parts = line.split('\t').filter(p => p !== ''); // Filter out empty parts from leading/trailing tabs
+                
+                if (parts.length >= 2) {
+                    try {
+                        // Find which part is the JSON (should start with '{' or '[')
+                        let jsonIndex = -1;
+                        let labelIndex = -1;
+                        
+                        for (let j = 0; j < parts.length; j++) {
+                            const trimmed = parts[j].trim();
+                            if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && jsonIndex === -1) {
+                                jsonIndex = j;
+                                if (j > 0) labelIndex = j - 1;
+                                break;
+                            }
+                        }
+                        
+                        if (jsonIndex === -1) continue; // No JSON found, skip this line
+                        
+                        const jsonData = JSON.parse(parts[jsonIndex]);
+                        let timestamp = parts[jsonIndex + 1] || '';
+                        
+                        // If timestamp is empty and next line exists and doesn't have tabs, it's the timestamp
+                        if (!timestamp && i + 1 < lines.length && !lines[i + 1].includes('\t')) {
+                            timestamp = lines[i + 1].trim();
+                            i++; // Skip the next line since we've consumed it
+                        }
+                        
+                        parsedData.push({
+                            seq: parsedData.length + 1,
+                            label: labelIndex >= 0 ? parts[labelIndex] : '',
+                            timestamp: timestamp,
+                            jsonData: jsonData,
+                            type: jsonData.type || '',
+                            agent: getAgent(jsonData),
+                            itemType: getItemType(jsonData),
+                            status: jsonData.status || getStatus(jsonData),
+                            action: getAction(jsonData),
+                            content: getContent(jsonData)
+                        });
+                    } catch (e) {
+                        console.error('Error parsing line:', line, e);
+                    }
+                }
+            }
+
+            populateFilters();
+            applyFilters();
+        }
+
+        function populateFilters() {
+            const types = new Set();
+            const agents = new Set();
+            const itemTypes = new Set();
+            const statuses = new Set();
+
+            parsedData.forEach(row => {
+                if (row.type) types.add(row.type);
+                if (row.agent) agents.add(row.agent);
+                if (row.itemType) itemTypes.add(row.itemType);
+                if (row.status) statuses.add(row.status);
+            });
+
+            populateSelect('typeFilter', Array.from(types).sort());
+            populateSelect('agentFilter', Array.from(agents).sort());
+            populateSelect('itemTypeFilter', Array.from(itemTypes).sort());
+            populateSelect('statusFilter', Array.from(statuses).sort());
+
+            // Add event listeners
+            document.getElementById('typeFilter').addEventListener('change', (e) => {
+                filters.type = e.target.value;
+                applyFilters();
+            });
+            document.getElementById('agentFilter').addEventListener('change', (e) => {
+                filters.agent = e.target.value;
+                applyFilters();
+            });
+            document.getElementById('itemTypeFilter').addEventListener('change', (e) => {
+                filters.itemType = e.target.value;
+                applyFilters();
+            });
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                filters.status = e.target.value;
+                applyFilters();
+            });
+        }
+
+        function populateSelect(id, values) {
+            const select = document.getElementById(id);
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">All ' + id.replace('Filter', '').replace(/([A-Z])/g, ' $1') + 's</option>';
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
+        }
+
+        function applyFilters() {
+            filteredData = parsedData.filter(row => {
+                if (filters.type && row.type !== filters.type) return false;
+                if (filters.agent && row.agent !== filters.agent) return false;
+                if (filters.itemType && row.itemType !== filters.itemType) return false;
+                if (filters.status && row.status !== filters.status) return false;
+                return true;
+            });
+            displayTable();
+        }
+
+        function clearFilters() {
+            filters = { type: '', agent: '', itemType: '', status: '' };
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('agentFilter').value = '';
+            document.getElementById('itemTypeFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            applyFilters();
+        }
+
+        function getAgent(data) {
+            if (data.agent?.name) return data.agent.name;
+            if (data.item?.created_by?.agent?.name) return data.item.created_by.agent.name;
+            if (data.response?.agent?.name) return data.response.agent.name;
+            return '';
+        }
+
+        function getItemType(data) {
+            if (data.item?.type) return data.item.type;
+            if (data.response) return 'response';
+            return data.type || '';
+        }
+
+        function getStatus(data) {
+            if (data.item?.status) return data.item.status;
+            if (data.response?.status) return data.response.status;
+            return '';
+        }
+
+        function getAction(data) {
+            if (data.item?.kind) return data.item.kind;
+            if (data.item?.action_id) return data.item.action_id;
+            return '';
+        }
+
+        function getContent(data) {
+            if (data.delta) return data.delta;
+            if (data.text) return data.text;
+            if (data.item?.content) {
+                if (Array.isArray(data.item.content) && data.item.content.length > 0) {
+                    return data.item.content[0].text || '';
+                }
+            }
+            if (data.part?.text) return data.part.text;
+            return '';
+        }
+
+        function displayTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            document.getElementById('totalRecords').textContent = parsedData.length;
+            document.getElementById('filteredRecords').textContent = filteredData.length;
+
+            filteredData.forEach((row, index) => {
+                // Main row
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="expand-icon">▶</span><span class="seq-number">${row.seq}</span></td>
+                    <td><span class="timestamp">${row.timestamp}</span></td>
+                    <td><span class="badge badge-message">${row.type}</span></td>
+                    <td>${row.agent}</td>
+                    <td>${row.itemType}</td>
+                    <td>${row.status ? `<span class="badge badge-${row.status.replace('_', '-')}">${row.status}</span>` : ''}</td>
+                    <td>${row.action}</td>
+                    <td><div class="content-preview">${escapeHtml(row.content)}</div></td>
+                `;
+                tr.onclick = () => toggleRow(index);
+                tbody.appendChild(tr);
+
+                // Expanded content row
+                const expandedTr = document.createElement('tr');
+                expandedTr.className = 'expanded-content';
+                expandedTr.id = `expanded-${index}`;
+                expandedTr.innerHTML = `
+                    <td colspan="8">
+                        <div class="json-viewer-container">
+                            <div class="json-viewer-header">
+                                <span class="json-viewer-title">📋 Full JSON Object</span>
+                                <button class="copy-button" onclick="copyJSON(${index}, event)">Copy JSON</button>
+                            </div>
+                            <div class="json-viewer"><pre>${syntaxHighlight(JSON.stringify(row.jsonData, null, 2))}</pre></div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(expandedTr);
+            });
+        }
+
+        function toggleRow(index) {
+            const expandedRow = document.getElementById(`expanded-${index}`);
+            const mainRow = expandedRow.previousElementSibling;
+            
+            expandedRow.classList.toggle('show');
+            mainRow.classList.toggle('expanded');
+        }
+
+        function copyJSON(index, event) {
+            event.stopPropagation();
+            const jsonText = JSON.stringify(parsedData[index].jsonData, null, 2);
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}[\],])/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                } else if (/[{}[\],]/.test(match)) {
+                    cls = 'json-brace';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
