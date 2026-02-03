@@ -4,11 +4,10 @@ import json
 import asyncio
 import os
 import time
-from typing import List, Dict, Any, Generator
+from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 import threading
-from dataclasses import dataclass, field, asdict
 from datetime import datetime
 
 from azure.identity import DefaultAzureCredential
@@ -43,120 +42,160 @@ current_conversation_id: str = None
 timing_logs: List[Dict[str, Any]] = []
 
 
-@dataclass
-class TimingData:
-    """Stores timing information for a single request."""
-    request_id: str
-    request_start: float = 0
-    request_end: float = 0
+class TimingEvents:
+    """Simple event-based timing - just a list of events with time, category, and event name."""
     
-    # Guardrail timings
-    guardrail_start: float = 0
-    guardrail_end: float = 0
-    guardrail_duration_ms: float = 0
+    def __init__(self, request_id: str):
+        self.request_id = request_id
+        self.events: List[Dict[str, Any]] = []
+        self.start_time = time.time()
+        self.guardrail_passed = True
+        self.guardrail_reason = ""
+        self.content_filters = None
     
-    # Workflow timings
-    workflow_start: float = 0
-    workflow_first_chunk: float = 0
-    workflow_end: float = 0
-    workflow_time_to_first_chunk_ms: float = 0
-    workflow_total_duration_ms: float = 0
-    
-    # Workflow chunk timings - list of (timestamp, chunk_size) tuples
-    workflow_chunks: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # Buffering timings
-    buffer_start: float = 0
-    buffer_release: float = 0
-    buffer_duration_ms: float = 0
-    events_buffered: int = 0
-    
-    # Overall
-    total_duration_ms: float = 0
-    guardrail_passed: bool = True
-    guardrail_reason: str = ""
+    def add(self, category: str, event: str, **extra):
+        """Add an event. Categories: request, blue_guardrail, purple_workflow"""
+        self.events.append({
+            "time": time.time(),
+            "time_ms": (time.time() - self.start_time) * 1000,
+            "category": category,
+            "event": event,
+            **extra
+        })
     
     def to_dict(self):
-        return asdict(self)
+        return {
+            "request_id": self.request_id,
+            "start_time": self.start_time,
+            "events": self.events,
+            "guardrail_passed": self.guardrail_passed,
+            "guardrail_reason": self.guardrail_reason,
+            "content_filters": self.content_filters,
+            "total_duration_ms": (time.time() - self.start_time) * 1000 if self.events else 0
+        }
 
 
-def call_guardrail_sync(user_message: str, conversation_history: List[Dict[str, str]], timing: TimingData) -> Dict[str, Any]:
+def call_guardrail_sync(user_message: str, conversation_id: str, timing: TimingEvents) -> Dict[str, Any]:
     """
     Call the blue-guardrail agent synchronously (non-streaming).
+    Uses conversation ID to provide context instead of passing full history.
     Returns the guardrail response with guardrailPassed and reason.
     """
-    timing.guardrail_start = time.time()
+    timing.add("blue_guardrail", "start")
     
     try:
+        timing.add("blue_guardrail", "credential.start")
         credential = DefaultAzureCredential()
+        timing.add("blue_guardrail", "credential.done")
+        
+        timing.add("blue_guardrail", "client.start")
         project_client = AIProjectClient(
             endpoint=AZURE_PROJECT_ENDPOINT,
             credential=credential,
         )
+        timing.add("blue_guardrail", "client.done")
         
         with project_client:
-            # Get the guardrail agent
-            agent = project_client.agents.get(agent_name=GUARDRAIL_AGENT_NAME)
-            
+            timing.add("blue_guardrail", "openai_client.start")
             openai_client = project_client.get_openai_client()
+            timing.add("blue_guardrail", "openai_client.done")
             
-            # Build input with conversation history context
-            guardrail_input = f"User message: {user_message}\n\nConversation history: {json.dumps(conversation_history)}"
-            
-            # Call guardrail (non-streaming)
-            response = openai_client.responses.create(
-                input=[{"role": "user", "content": guardrail_input}],
-                extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
-            )
+            try:
+                timing.add("blue_guardrail", "responses.create.start")
+                response = openai_client.responses.create(
+                    input=[{"role": "user", "content": user_message}],
+                    conversation=conversation_id,
+                    extra_body={"agent": {"name": GUARDRAIL_AGENT_NAME, "type": "agent_reference"}},
+                )
+                timing.add("blue_guardrail", "responses.create.done")
+            except Exception as api_error:
+                timing.add("blue_guardrail", "responses.create.error", error=str(api_error))
+                raise
             
             # Parse the response - expecting JSON with guardrailPassed and reason
             response_text = response.output_text
-            timing.guardrail_end = time.time()
-            timing.guardrail_duration_ms = (timing.guardrail_end - timing.guardrail_start) * 1000
             
             try:
                 result = json.loads(response_text)
+                timing.add("blue_guardrail", "done", result="passed" if result.get("guardrailPassed", True) else "failed")
                 return result
             except json.JSONDecodeError:
-                # If response isn't valid JSON, assume it passed
+                timing.add("blue_guardrail", "done", result="passed")
                 return {"guardrailPassed": True, "reason": "", "raw_response": response_text}
                 
     except Exception as e:
-        timing.guardrail_end = time.time()
-        timing.guardrail_duration_ms = (timing.guardrail_end - timing.guardrail_start) * 1000
-        # On error, let the request through but log the error
+        timing.add("blue_guardrail", "error", error=str(e)[:100])
+        
+        # Check if this is a content filter exception (Azure's built-in safety)
+        error_str = str(e)
+        
+        if "content_filter" in error_str or "content_management_policy" in error_str:
+            # Extract the filter reason
+            filter_reason = "Azure content filter triggered"
+            content_filters_json = None
+            
+            # Try to extract the content_filters from the exception body
+            try:
+                if hasattr(e, 'body') and isinstance(e.body, dict):
+                    content_filters_json = e.body.get('content_filters')
+            except:
+                pass
+            
+            if "self_harm" in error_str:
+                filter_reason = "Azure content filter: self-harm detected"
+            elif "violence" in error_str and "'filtered': True" in error_str:
+                filter_reason = "Azure content filter: violence detected"
+            elif "hate" in error_str and "'filtered': True" in error_str:
+                filter_reason = "Azure content filter: hate speech detected"
+            elif "sexual" in error_str and "'filtered': True" in error_str:
+                filter_reason = "Azure content filter: sexual content detected"
+            
+            print(f"[GUARDRAIL] Content filter triggered - blocking request")
+            return {
+                "guardrailPassed": False, 
+                "reason": filter_reason, 
+                "azure_content_filter": True,
+                "content_filters": content_filters_json
+            }
+        
+        # On other errors, let the request through but log the error
         return {"guardrailPassed": True, "reason": f"Guardrail error: {str(e)}"}
 
 
-def stream_workflow_response(user_message: str, queue: Queue, timing: TimingData):
+def stream_workflow_response(user_message: str, queue: Queue, timing: TimingEvents):
     """
     Stream response from Azure AI Workflow.
     Puts events into a queue for async consumption.
     """
-    timing.workflow_start = time.time()
+    timing.add("purple_workflow", "start")
     
     try:
+        timing.add("purple_workflow", "credential.start")
         credential = DefaultAzureCredential()
+        timing.add("purple_workflow", "credential.done")
+        
+        timing.add("purple_workflow", "client.start")
         project_client = AIProjectClient(
             endpoint=AZURE_PROJECT_ENDPOINT,
             credential=credential,
         )
+        timing.add("purple_workflow", "client.done")
         
         with project_client:
-            workflow = {
-                "name": WORKFLOW_NAME,
-                "version": WORKFLOW_VERSION,
-            }
-            
+            timing.add("purple_workflow", "openai_client.start")
             openai_client = project_client.get_openai_client()
+            timing.add("purple_workflow", "openai_client.done")
             
             # Create a new conversation for this chat
+            timing.add("purple_workflow", "conversation.create.start")
             conversation = openai_client.conversations.create()
+            timing.add("purple_workflow", "conversation.create.done")
             
             # Stream the response
+            timing.add("purple_workflow", "responses.create.start")
             stream = openai_client.responses.create(
                 conversation=conversation.id,
-                extra_body={"agent": {"name": workflow["name"], "type": "agent_reference"}},
+                extra_body={"agent": {"name": WORKFLOW_NAME, "type": "agent_reference"}},
                 input=user_message,
                 stream=True,
                 metadata={"x-ms-debug-mode-enabled": "1"},
@@ -164,91 +203,62 @@ def stream_workflow_response(user_message: str, queue: Queue, timing: TimingData
             
             full_response = ""
             started = False
-            first_chunk_recorded = False
-            chunk_index = 0
             
             for event in stream:
-                event_time = time.time()
-                
                 # Get event type as string
                 event_type_str = str(event.type) if hasattr(event, 'type') else 'unknown'
+                # Simplify event type name
+                event_name = event_type_str.replace("ResponseStreamEventType.", "")
                 
-                # Record ALL events for timing visualization
-                event_info = {
-                    "index": chunk_index,
-                    "timestamp": event_time,
-                    "time_from_start_ms": (event_time - timing.workflow_start) * 1000,
-                    "event_type": event_type_str,
-                    "size": 0,
-                    "content_preview": ""
-                }
-                
+                # Add extra info based on event type
+                extra = {}
                 if event.type == ResponseStreamEventType.RESPONSE_OUTPUT_TEXT_DELTA:
+                    extra["size"] = len(event.delta)
                     if not started:
-                        queue.put({"type": "message", "start": True, "timestamp": event_time})
+                        queue.put({"type": "message", "start": True})
                         started = True
-                    if not first_chunk_recorded:
-                        timing.workflow_first_chunk = event_time
-                        timing.workflow_time_to_first_chunk_ms = (event_time - timing.workflow_start) * 1000
-                        first_chunk_recorded = True
-                    
-                    # Add text-specific info
-                    event_info["size"] = len(event.delta)
-                    event_info["content_preview"] = event.delta[:20] if len(event.delta) > 20 else event.delta
-                    
                     full_response += event.delta
-                    queue.put({"type": "message", "content": event.delta, "timestamp": event_time})
-                elif event.type == ResponseStreamEventType.RESPONSE_OUTPUT_TEXT_DONE:
-                    # Final text is available
-                    pass
+                    queue.put({"type": "message", "content": event.delta})
                 elif event.type == ResponseStreamEventType.RESPONSE_OUTPUT_ITEM_ADDED:
                     if hasattr(event, 'item') and hasattr(event.item, 'type'):
-                        event_info["item_type"] = event.item.type
-                        if event.item.type == "workflow_action":
-                            event_info["action_id"] = event.item.action_id if hasattr(event.item, 'action_id') else ""
-                            queue.put({"type": "workflow", "action": "started", "action_id": event.item.action_id, "timestamp": event_time})
+                        extra["item_type"] = event.item.type
+                        if event.item.type == "workflow_action" and hasattr(event.item, 'action_id'):
+                            extra["action_id"] = event.item.action_id
                 elif event.type == ResponseStreamEventType.RESPONSE_OUTPUT_ITEM_DONE:
                     if hasattr(event, 'item') and hasattr(event.item, 'type'):
-                        event_info["item_type"] = event.item.type
-                        if event.item.type == "workflow_action":
-                            event_info["action_id"] = event.item.action_id if hasattr(event.item, 'action_id') else ""
-                            event_info["status"] = event.item.status if hasattr(event.item, 'status') else ""
-                            queue.put({"type": "workflow", "action": "done", "action_id": event.item.action_id, "status": event.item.status, "timestamp": event_time})
+                        extra["item_type"] = event.item.type
+                        if hasattr(event.item, 'status'):
+                            extra["status"] = event.item.status
                 
-                # Always record the event
-                timing.workflow_chunks.append(event_info)
-                chunk_index += 1
+                timing.add("purple_workflow", event_name, **extra)
             
-            timing.workflow_end = time.time()
-            timing.workflow_total_duration_ms = (timing.workflow_end - timing.workflow_start) * 1000
+            timing.add("purple_workflow", "done")
             
             if not started:
-                queue.put({"type": "message", "start": True, "timestamp": time.time()})
+                queue.put({"type": "message", "start": True})
             
-            queue.put({"type": "message", "end": True, "timestamp": time.time()})
-            queue.put({"type": "done", "full_response": full_response, "timestamp": time.time()})
+            queue.put({"type": "message", "end": True})
+            queue.put({"type": "done", "full_response": full_response})
             
     except Exception as e:
-        timing.workflow_end = time.time()
-        timing.workflow_total_duration_ms = (timing.workflow_end - timing.workflow_start) * 1000
-        
-        queue.put({"type": "message", "start": True, "timestamp": time.time()})
-        queue.put({"type": "message", "content": f"Error: {str(e)}", "timestamp": time.time()})
-        queue.put({"type": "message", "end": True, "timestamp": time.time()})
-        queue.put({"type": "done", "full_response": f"Error: {str(e)}", "timestamp": time.time()})
+        timing.add("purple_workflow", "error", error=str(e)[:100])
+        queue.put({"type": "message", "start": True})
+        queue.put({"type": "message", "content": f"Error: {str(e)}"})
+        queue.put({"type": "message", "end": True})
+        queue.put({"type": "done", "full_response": f"Error: {str(e)}"})
     finally:
         queue.put(None)  # Signal end of stream
 
 
-async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], history: List[Dict[str, str]], timing: TimingData):
+async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], conversation_id: str, timing: TimingEvents):
     """
     Send messages to Azure AI Workflow while concurrently checking guardrail.
     Buffers workflow events until guardrail responds.
     
     Args:
         messages: List of message dicts with 'role' and 'content'
-        history: Conversation history for guardrail context
-        timing: TimingData object to record timings
+        conversation_id: Conversation ID to provide context to guardrail
+        timing: TimingEvents object to record timings
     
     Yields:
         Response chunks (or guardrail hit message)
@@ -261,7 +271,7 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], histo
     
     # Buffer for holding events until guardrail responds
     event_buffer = []
-    timing.buffer_start = time.time()
+    timing.add("request", "buffer.start")
     
     # Start workflow streaming in a thread
     workflow_thread = threading.Thread(target=stream_workflow_response, args=(user_message, workflow_queue, timing))
@@ -273,7 +283,7 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], histo
         executor, 
         call_guardrail_sync, 
         user_message,
-        history,
+        conversation_id,
         timing
     )
     
@@ -285,9 +295,7 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], histo
         # Check if guardrail is done
         if guardrail_future.done():
             guardrail_result = await guardrail_future
-            timing.buffer_release = time.time()
-            timing.buffer_duration_ms = (timing.buffer_release - timing.buffer_start) * 1000
-            timing.events_buffered = len(event_buffer)
+            timing.add("request", "buffer.release", events_buffered=len(event_buffer))
             break
         
         # Try to get workflow events (non-blocking)
@@ -309,18 +317,30 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], histo
     # Record guardrail result
     timing.guardrail_passed = guardrail_result.get("guardrailPassed", True)
     timing.guardrail_reason = guardrail_result.get("reason", "")
+    timing.content_filters = guardrail_result.get("content_filters")
     
     # Now we have guardrail result
     if not guardrail_result.get("guardrailPassed", True):
-        # Guardrail failed - send guardrail hit message
+        timing.add("request", "guardrail.blocked")
+        # Guardrail failed - send guardrail hit message with content filters
+        content_filters = guardrail_result.get("content_filters")
+        message = "Guardrail Hit :(\n\n"
+        message += f"**Reason:** {guardrail_result.get('reason', 'Unknown')}\n\n"
+        if content_filters:
+            message += "**Content Filters:**\n```json\n"
+            message += json.dumps(content_filters, indent=2)
+            message += "\n```"
+        
         yield {"type": "message", "start": True}
-        yield {"type": "message", "content": "Guardrail Hit :("}
+        yield {"type": "message", "content": message}
         yield {"type": "message", "end": True}
-        yield {"type": "done", "full_response": "Guardrail Hit :(", "guardrail": guardrail_result}
+        yield {"type": "done", "full_response": message, "guardrail": guardrail_result}
         
         # Clean up the workflow thread
         workflow_thread.join(timeout=1)
         return
+    
+    timing.add("request", "streaming.start")
     
     # Guardrail passed - send all buffered events
     for event in event_buffer:
@@ -338,6 +358,7 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], histo
                 break
             yield event
     
+    timing.add("request", "done")
     workflow_thread.join()
 
 
@@ -357,12 +378,26 @@ def set_instructions(instructions: str = ""):
 @app.get("/chat")
 async def chat_endpoint(msg: str):
     """Chat endpoint that streams responses from Azure AI Workflow with concurrent guardrail check."""
-    global conversation_history, timing_logs
+    global conversation_history, timing_logs, current_conversation_id
     
     # Create timing data for this request
     request_id = f"{datetime.now().isoformat()}_{len(timing_logs)}"
-    timing = TimingData(request_id=request_id)
-    timing.request_start = time.time()
+    timing = TimingEvents(request_id=request_id)
+    timing.add("request", "start")
+    
+    # Create or reuse conversation for context
+    if current_conversation_id is None:
+        timing.add("request", "conversation.create.start")
+        credential = DefaultAzureCredential()
+        project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+        with project_client:
+            openai_client = project_client.get_openai_client()
+            conversation = openai_client.conversations.create()
+            current_conversation_id = conversation.id
+        timing.add("request", "conversation.create.done", conversation_id=current_conversation_id)
+        print(f"[CONVERSATION] Created new conversation: {current_conversation_id}")
+    else:
+        print(f"[CONVERSATION] Reusing conversation: {current_conversation_id}")
     
     # Add user message to history
     conversation_history.append({"role": "user", "content": msg})
@@ -372,18 +407,33 @@ async def chat_endpoint(msg: str):
     
     async def event_stream():
         full_response = ""
-        async for result in chat_with_workflow_and_guardrail(messages, conversation_history, timing):
+        async for result in chat_with_workflow_and_guardrail(messages, current_conversation_id, timing):
             if result["type"] == "done":
                 full_response = result["full_response"]
             else:
                 yield f"data: {json.dumps(result)}\n\n"
         
-        # Add assistant response to history
+        # Add assistant response to local history
         conversation_history.append({"role": "assistant", "content": full_response})
         
-        # Finalize timing
-        timing.request_end = time.time()
-        timing.total_duration_ms = (timing.request_end - timing.request_start) * 1000
+        # Add the exchange to the Azure conversation for guardrail context
+        try:
+            credential = DefaultAzureCredential()
+            project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+            with project_client:
+                openai_client = project_client.get_openai_client()
+                # Add user message and assistant response to conversation
+                openai_client.responses.create(
+                    input=[
+                        {"role": "user", "content": msg},
+                        {"role": "assistant", "content": full_response}
+                    ],
+                    conversation=current_conversation_id,
+                    extra_body={"agent": {"name": GUARDRAIL_AGENT_NAME, "type": "agent_reference"}},
+                )
+                print(f"[CONVERSATION] Added exchange to conversation {current_conversation_id}")
+        except Exception as e:
+            print(f"[CONVERSATION] Failed to add to conversation: {e}")
         
         # Store timing data
         timing_logs.append(timing.to_dict())
@@ -402,9 +452,10 @@ def history_endpoint():
 
 @app.get("/clear")
 def clear_endpoint():
-    """Clear the conversation history."""
-    global conversation_history
+    """Clear the conversation history and reset conversation ID."""
+    global conversation_history, current_conversation_id
     conversation_history = []
+    current_conversation_id = None
     return {"status": "success", "message": "History cleared"}
 
 
@@ -434,43 +485,9 @@ def clear_timings_endpoint():
 def timings_chart_data():
     """
     Return timing data formatted for chart visualization.
-    Returns data suitable for a Gantt-style chart showing parallel execution.
+    The new format is just a list of events.
     """
-    chart_data = []
-    
-    for t in timing_logs:
-        base_time = t.get("request_start", 0)
-        
-        entry = {
-            "request_id": t.get("request_id", ""),
-            "total_duration_ms": t.get("total_duration_ms", 0),
-            "guardrail_passed": t.get("guardrail_passed", True),
-            "events_buffered": t.get("events_buffered", 0),
-            "components": [
-                {
-                    "name": "Guardrail (blue-guardrail)",
-                    "start_ms": (t.get("guardrail_start", base_time) - base_time) * 1000,
-                    "duration_ms": t.get("guardrail_duration_ms", 0),
-                    "color": "#3b82f6"  # blue
-                },
-                {
-                    "name": "Workflow (purple-workflow)",
-                    "start_ms": (t.get("workflow_start", base_time) - base_time) * 1000,
-                    "duration_ms": t.get("workflow_total_duration_ms", 0),
-                    "time_to_first_chunk_ms": t.get("workflow_time_to_first_chunk_ms", 0),
-                    "color": "#8b5cf6"  # purple
-                },
-                {
-                    "name": "Buffer Wait",
-                    "start_ms": (t.get("buffer_start", base_time) - base_time) * 1000,
-                    "duration_ms": t.get("buffer_duration_ms", 0),
-                    "color": "#f59e0b"  # amber
-                }
-            ]
-        }
-        chart_data.append(entry)
-    
-    return {"chart_data": chart_data}
+    return {"timings": timing_logs}
 
 
 if __name__ == "__main__":

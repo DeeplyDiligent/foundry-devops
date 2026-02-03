@@ -521,16 +521,44 @@
             background: #60a5fa;
         }
         
-        .event-dot.response-created {
+        .event-dot.response-created, .event-dot.start-event {
             background: #10b981;
         }
         
-        .event-dot.response-done {
+        .event-dot.response-done, .event-dot.done-event {
             background: #34d399;
         }
         
-        .event-dot.unknown {
+        .event-dot.response-completed {
+            background: #22c55e;
+            width: 10px;
+            height: 10px;
+        }
+        
+        .event-dot.response-incomplete {
+            background: #ef4444;
+            width: 10px;
+            height: 10px;
+        }
+        
+        .event-dot.error-event {
+            background: #ef4444;
+        }
+        
+        .event-dot.unknown, .event-dot.workflow-event, .event-dot.guardrail-event {
             background: #6b7280;
+        }
+        
+        .event-dot.request-event {
+            background: #f59e0b;
+        }
+        
+        .event-dot.buffer-event {
+            background: #fbbf24;
+        }
+        
+        .event-dot.streaming-event {
+            background: #06b6d4;
         }
         
         .event-dot.buffered {
@@ -591,6 +619,27 @@
         
         .timing-stat-value.failed {
             color: #f85149;
+        }
+        
+        /* Content filters display */
+        .content-filters-section {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 8px;
+        }
+        
+        .content-filters-json {
+            background: #1c1c1c;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 0;
+            font-size: 10px;
+            color: #e6e6e6;
+            overflow-x: auto;
+            max-width: 100%;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
         
         .no-timing {
@@ -687,114 +736,92 @@
         }
         
         function renderTimingWaterfall(timing) {
-            if (!timing) {
+            if (!timing || !timing.events || timing.events.length === 0) {
                 timingContent.innerHTML = '<div class="no-timing">No timing data yet. Send a message to see the waterfall.</div>';
                 return;
             }
             
+            const events = timing.events;
             const totalDuration = timing.total_duration_ms || 1;
             const scale = 100 / totalDuration; // percentage per ms
             
-            // Calculate positions and widths
-            const guardrailStart = timing.guardrail_start && timing.request_start 
-                ? (timing.guardrail_start - timing.request_start) * 1000 
-                : 0;
-            const guardrailWidth = timing.guardrail_duration_ms || 0;
+            // Group events by category
+            const requestEvents = events.filter(e => e.category === 'request');
+            const guardrailEvents = events.filter(e => e.category === 'blue_guardrail');
+            const workflowEvents = events.filter(e => e.category === 'purple_workflow');
             
-            const workflowStart = timing.workflow_start && timing.request_start 
-                ? (timing.workflow_start - timing.request_start) * 1000 
-                : 0;
-            const workflowWidth = timing.workflow_total_duration_ms || 0;
-            const firstChunkTime = timing.workflow_time_to_first_chunk_ms || 0;
-            
-            const bufferStart = timing.buffer_start && timing.request_start 
-                ? (timing.buffer_start - timing.request_start) * 1000 
-                : 0;
-            const bufferWidth = timing.buffer_duration_ms || 0;
-            const bufferEndMs = bufferStart + bufferWidth;
-            
-            // Helper to get CSS class from event type
-            function getEventDotClass(eventType) {
-                if (!eventType) return 'unknown';
-                const type = eventType.toLowerCase();
-                if (type.includes('text_delta')) return 'text-delta';
-                if (type.includes('text_done')) return 'text-done';
-                if (type.includes('item_added')) return 'item-added';
-                if (type.includes('item_done')) return 'item-done';
-                if (type.includes('response_created') || type.includes('created')) return 'response-created';
-                if (type.includes('response_done') || type.includes('completed')) return 'response-done';
+            // Helper to get CSS class from event name
+            function getEventDotClass(category, event) {
+                // Green for completed responses (success end state)
+                if (event.includes('response.completed')) {
+                    return 'response-completed';
+                }
+                // Red for incomplete responses (something went wrong)
+                if (event.includes('response.incomplete')) {
+                    return 'response-incomplete';
+                }
+                
+                if (category === 'request') {
+                    if (event.includes('buffer')) return 'buffer-event';
+                    if (event.includes('streaming')) return 'streaming-event';
+                    return 'request-event';
+                }
+                if (category === 'blue_guardrail') {
+                    if (event.includes('start')) return 'start-event';
+                    if (event.includes('done') || event.includes('completed')) return 'done-event';
+                    if (event.includes('error')) return 'error-event';
+                    return 'guardrail-event';
+                }
+                if (category === 'purple_workflow') {
+                    if (event.includes('TEXT_DELTA')) return 'text-delta';
+                    if (event.includes('TEXT_DONE')) return 'text-done';
+                    if (event.includes('ITEM_ADDED')) return 'item-added';
+                    if (event.includes('ITEM_DONE')) return 'item-done';
+                    if (event.includes('start')) return 'start-event';
+                    if (event.includes('done') || event.includes('completed')) return 'done-event';
+                    if (event.includes('error')) return 'error-event';
+                    return 'workflow-event';
+                }
                 return 'unknown';
             }
             
-            // Generate event dots HTML
-            const chunks = timing.workflow_chunks || [];
-            let eventDotsHtml = '';
-            chunks.forEach((chunk, index) => {
-                const chunkStartMs = workflowStart + chunk.time_from_start_ms;
-                const isBuffered = chunkStartMs < bufferEndMs;
-                const dotClass = getEventDotClass(chunk.event_type);
-                const bufferedClass = isBuffered ? ' buffered' : '';
-                
-                // Build tooltip text
-                let tooltipParts = [
-                    `#${chunk.index}`,
-                    `${chunk.time_from_start_ms.toFixed(0)}ms`,
-                    chunk.event_type || 'unknown'
-                ];
-                if (chunk.size > 0) tooltipParts.push(`${chunk.size} chars`);
-                if (chunk.item_type) tooltipParts.push(`item: ${chunk.item_type}`);
-                if (chunk.action_id) tooltipParts.push(`action: ${chunk.action_id}`);
-                const tooltipText = tooltipParts.join(' | ');
-                
-                eventDotsHtml += `
-                    <div class="event-dot ${dotClass}${bufferedClass}" 
-                         style="left: calc(${chunkStartMs * scale}% - 4px);"
-                         title="${tooltipText}">
-                    </div>`;
-            });
+            // Generate dots for a row
+            function generateDots(events, category) {
+                return events.map(e => {
+                    const dotClass = getEventDotClass(category, e.event);
+                    const leftPos = e.time_ms * scale;
+                    
+                    // Build tooltip
+                    let tooltip = `${e.time_ms.toFixed(0)}ms | ${e.event}`;
+                    if (e.size) tooltip += ` | ${e.size} chars`;
+                    if (e.error) tooltip += ` | Error: ${e.error}`;
+                    if (e.item_type) tooltip += ` | ${e.item_type}`;
+                    if (e.events_buffered) tooltip += ` | ${e.events_buffered} buffered`;
+                    
+                    return `<div class="event-dot ${dotClass}" 
+                                 style="left: calc(${leftPos}% - 4px);"
+                                 title="${tooltip}"></div>`;
+                }).join('');
+            }
             
             const html = `
                 <div class="waterfall-chart">
                     <div class="waterfall-row">
-                        <div class="waterfall-label">🔵 Blue Guardrail</div>
+                        <div class="waterfall-label">📋 Request (${requestEvents.length})</div>
                         <div class="waterfall-bar-container">
-                            <div class="waterfall-bar guardrail" 
-                                 style="left: ${guardrailStart * scale}%; width: ${Math.max(guardrailWidth * scale, 1)}%;">
-                                ${guardrailWidth.toFixed(0)}ms
-                            </div>
+                            ${generateDots(requestEvents, 'request')}
                         </div>
                     </div>
                     <div class="waterfall-row">
-                        <div class="waterfall-label">🟣 Workflow Events (${chunks.length})</div>
+                        <div class="waterfall-label">🔵 Blue Guardrail (${guardrailEvents.length})</div>
                         <div class="waterfall-bar-container">
-                            ${eventDotsHtml}
+                            ${generateDots(guardrailEvents, 'blue_guardrail')}
                         </div>
                     </div>
                     <div class="waterfall-row">
-                        <div class="waterfall-label">🟣 Purple Workflow Total</div>
+                        <div class="waterfall-label">🟣 Purple Workflow (${workflowEvents.length})</div>
                         <div class="waterfall-bar-container">
-                            <div class="waterfall-bar workflow" 
-                                 style="left: ${workflowStart * scale}%; width: ${Math.max(workflowWidth * scale, 1)}%;">
-                                ${workflowWidth.toFixed(0)}ms
-                            </div>
-                        </div>
-                    </div>
-                    <div class="waterfall-row">
-                        <div class="waterfall-label">⏳ Buffer Wait</div>
-                        <div class="waterfall-bar-container">
-                            <div class="waterfall-bar buffer" 
-                                 style="left: ${bufferStart * scale}%; width: ${Math.max(bufferWidth * scale, 1)}%;">
-                                ${bufferWidth.toFixed(0)}ms
-                            </div>
-                        </div>
-                    </div>
-                    <div class="waterfall-row">
-                        <div class="waterfall-label">🚀 Time to First Chunk</div>
-                        <div class="waterfall-bar-container">
-                            <div class="waterfall-bar first-chunk" 
-                                 style="left: ${workflowStart * scale}%; width: ${Math.max(firstChunkTime * scale, 1)}%;">
-                                ${firstChunkTime.toFixed(0)}ms
-                            </div>
+                            ${generateDots(workflowEvents, 'purple_workflow')}
                         </div>
                     </div>
                 </div>
@@ -805,20 +832,8 @@
                         <span class="timing-stat-value">${totalDuration.toFixed(0)}ms</span>
                     </div>
                     <div class="timing-stat">
-                        <span class="timing-stat-label">Guardrail</span>
-                        <span class="timing-stat-value">${guardrailWidth.toFixed(0)}ms</span>
-                    </div>
-                    <div class="timing-stat">
-                        <span class="timing-stat-label">Workflow</span>
-                        <span class="timing-stat-value">${workflowWidth.toFixed(0)}ms</span>
-                    </div>
-                    <div class="timing-stat">
-                        <span class="timing-stat-label">Chunks</span>
-                        <span class="timing-stat-value">${chunks.length}</span>
-                    </div>
-                    <div class="timing-stat">
-                        <span class="timing-stat-label">Buffered Chunks</span>
-                        <span class="timing-stat-value">${chunks.filter(c => (workflowStart + c.time_from_start_ms) < bufferEndMs).length}</span>
+                        <span class="timing-stat-label">Total Events</span>
+                        <span class="timing-stat-value">${events.length}</span>
                     </div>
                     <div class="timing-stat">
                         <span class="timing-stat-label">Guardrail Result</span>
