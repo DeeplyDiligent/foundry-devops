@@ -116,13 +116,34 @@ def call_guardrail_sync(user_message: str, conversation_id: str, timing: TimingE
             # Parse the response - expecting JSON with guardrailPassed and reason
             response_text = response.output_text
             
+            print(f"[GUARDRAIL] Raw response: {response_text}")
+            
             try:
                 result = json.loads(response_text)
+                print(f"[GUARDRAIL] Parsed result: {result}")
+                print(f"[GUARDRAIL] guardrailPassed = {result.get('guardrailPassed', True)}")
                 timing.add("blue_guardrail", "done", result="passed" if result.get("guardrailPassed", True) else "failed")
                 return result
-            except json.JSONDecodeError:
-                timing.add("blue_guardrail", "done", result="passed")
-                return {"guardrailPassed": True, "reason": "", "raw_response": response_text}
+            except json.JSONDecodeError as json_err:
+                print(f"[GUARDRAIL] JSON decode error: {json_err}")
+                
+                # Try to parse manually if JSON is malformed (e.g., missing comma)
+                # Look for "guardrailPassed":false or "guardrailPassed": false
+                import re
+                passed_match = re.search(r'"guardrailPassed"\s*:\s*(true|false)', response_text, re.IGNORECASE)
+                reason_match = re.search(r'"reason"\s*:\s*"([^"]*)"', response_text)
+                
+                if passed_match:
+                    passed = passed_match.group(1).lower() == 'true'
+                    reason = reason_match.group(1) if reason_match else "Malformed JSON response"
+                    print(f"[GUARDRAIL] Manually parsed: guardrailPassed={passed}, reason={reason}")
+                    timing.add("blue_guardrail", "done", result="passed" if passed else "failed", manual_parse=True)
+                    return {"guardrailPassed": passed, "reason": reason, "raw_response": response_text}
+                else:
+                    # If we can't parse at all, default to blocking for safety
+                    print(f"[GUARDRAIL] Could not parse guardrailPassed - defaulting to BLOCK for safety")
+                    timing.add("blue_guardrail", "done", result="failed", parse_error=True)
+                    return {"guardrailPassed": False, "reason": f"Guardrail response parse error: {json_err}", "raw_response": response_text}
                 
     except Exception as e:
         timing.add("blue_guardrail", "error", error=str(e)[:100])
@@ -202,12 +223,21 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
             
             full_response = ""
             started = False
+            message_ids = []  # Track message IDs from the response
             
             for event in stream:
                 # Get event type as string
                 event_type_str = str(event.type) if hasattr(event, 'type') else 'unknown'
                 # Simplify event type name
                 event_name = event_type_str.replace("ResponseStreamEventType.", "")
+                
+                # Debug: Print full event structure
+                print(f"[WORKFLOW] Event: {event_name}, has item: {hasattr(event, 'item')}, has id: {hasattr(event, 'id')}")
+                if hasattr(event, 'item'):
+                    print(f"[WORKFLOW]   Item type: {getattr(event.item, 'type', 'N/A')}, Item id: {getattr(event.item, 'id', 'N/A')}")
+                    if hasattr(event.item, 'id') and event.item.id:
+                        message_ids.append(event.item.id)
+                        print(f"[WORKFLOW]   Captured message ID: {event.item.id}")
                 
                 # Add extra info based on event type
                 extra = {}
@@ -233,11 +263,17 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
             
             timing.add("purple_workflow", "done")
             
+            print(f"[WORKFLOW] Stream complete. Collected message IDs: {message_ids}")
+            
+            # Deduplicate message IDs while preserving order
+            unique_message_ids = list(dict.fromkeys(message_ids))
+            print(f"[WORKFLOW] Unique message IDs: {unique_message_ids}")
+            
             if not started:
                 queue.put({"type": "message", "start": True})
             
             queue.put({"type": "message", "end": True})
-            queue.put({"type": "done", "full_response": full_response})
+            queue.put({"type": "done", "full_response": full_response, "message_ids": unique_message_ids})
             
     except Exception as e:
         timing.add("purple_workflow", "error", error=str(e)[:100])
@@ -322,6 +358,47 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], guard
     # Now we have guardrail result
     if not guardrail_result.get("guardrailPassed", True):
         timing.add("request", "guardrail.blocked")
+        
+        # Wait for workflow to complete and collect all remaining events (including message IDs)
+        print(f"[GUARDRAIL] Blocked - waiting for workflow to complete so we can clean up")
+        workflow_message_ids = []
+        if not workflow_done:
+            while True:
+                event = await loop.run_in_executor(None, workflow_queue.get)
+                if event is None:
+                    break
+                if event["type"] == "done" and "message_ids" in event:
+                    workflow_message_ids = event["message_ids"]
+                    print(f"[GUARDRAIL] Workflow completed with message IDs: {workflow_message_ids}")
+        
+        # Delete the workflow messages from the conversation
+        if workflow_message_ids:
+            timing.add("request", "cleanup.start", message_count=len(workflow_message_ids))
+            print(f"[GUARDRAIL] Deleting {len(workflow_message_ids)} messages from workflow conversation {workflow_conv_id}")
+            try:
+                credential = DefaultAzureCredential()
+                project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+                with project_client:
+                    openai_client = project_client.get_openai_client()
+                    for msg_id in workflow_message_ids:
+                        try:
+                            print(f"[GUARDRAIL] Deleting message: {msg_id}")
+                            timing.add("request", "cleanup.delete", message_id=msg_id)
+                            # item_id is positional, conversation_id is keyword-only
+                            result = openai_client.conversations.items.delete(
+                                msg_id,
+                                conversation_id=workflow_conv_id
+                            )
+                            print(f"[GUARDRAIL] Deleted message {msg_id} successfully")
+                            timing.add("request", "cleanup.delete.success", message_id=msg_id)
+                        except Exception as delete_error:
+                            print(f"[GUARDRAIL] Failed to delete message {msg_id}: {delete_error}")
+                            timing.add("request", "cleanup.delete.error", message_id=msg_id, error=str(delete_error)[:100])
+                timing.add("request", "cleanup.done")
+            except Exception as cleanup_error:
+                print(f"[GUARDRAIL] Cleanup error: {cleanup_error}")
+                timing.add("request", "cleanup.error", error=str(cleanup_error)[:100])
+        
         # Guardrail failed - send guardrail hit message with content filters
         content_filters = guardrail_result.get("content_filters")
         message = "Guardrail Hit :(\n\n"
