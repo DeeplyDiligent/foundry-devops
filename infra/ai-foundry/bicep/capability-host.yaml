@@ -1,0 +1,6 @@
+$schema: https://azuremlschemas.azureedge.net/latest/capabilityHost.schema.json
+name: default-capability-host
+capability_host_kind: Agents
+description: Capability host for AI Agent Service with CosmosDB thread storage
+storage_connections:
+  - /subscriptions/fce27326-d5b1-4a1e-b77c-5a869a831de1/resourceGroups/Dev/providers/Microsoft.CognitiveServices/accounts/sweeden-test/projects/swe-proj/connections/cosmosdb-thread-storage

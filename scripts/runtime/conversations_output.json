@@ -1,0 +1,1009 @@
+[
+  {
+    "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+    "info": {
+      "created_at": 1770255191980,
+      "updated_at": 1770255191980,
+      "deleted": false
+    },
+    "metadata": {
+      "uid": "378789217893712",
+      "verified": true
+    },
+    "object": {
+      "id": "conv_182b7c44a09a431100moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+      "metadata": {},
+      "partition_id": "182b7c44a09a431100",
+      "project_id": "aisvcgu5v@projectgu5v@AML",
+      "object_type": "conversation"
+    },
+    "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+    "messages": [
+      {
+        "id": "msg_6983f35be46081909ca485ccf9c35328",
+        "info": {
+          "created_at": 1770255198259,
+          "updated_at": 1770255198259,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983f35be46081909ca485ccf9c35328",
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "hi"
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983f35be46081909ca485ccf9c35328",
+            "created_at": "2026-02-05T01:33:15.892217+00:00",
+            "updated_at": "2026-02-05T01:33:15.892220+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "content_type": "input_text",
+                "text": "hi"
+              }
+            ],
+            "chat_message_id": "",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": null,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983f3599d148190ac646a793f2af2ca",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": null,
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "json",
+            "chat_message_metadata_json": null,
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "user",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983f35be46081909ca485ccf9c35328",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUDAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUDAAAAAAAAAA==/",
+        "_etag": "\"03006dd1-0000-0700-0000-6983f35e0000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770255198
+      },
+      {
+        "id": "msg_6983f35c3d58819093c1b0dbc2217821",
+        "info": {
+          "created_at": 1770255198259,
+          "updated_at": 1770255198259,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983f35c3d58819093c1b0dbc2217821",
+            "created_by": {
+              "agent": {
+                "type": "agent_id",
+                "name": "agent1",
+                "version": "1"
+              },
+              "response_id": "resp_182b7c44a09a4311006983f3599d148190ac646a793f2af2ca"
+            },
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "Hello! How can I help you today? \ud83d\ude0a",
+                "annotations": [],
+                "logprobs": []
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983f35c3d58819093c1b0dbc2217821",
+            "created_at": "2026-02-05T01:33:16.325344+00:00",
+            "updated_at": "2026-02-05T01:33:16.325348+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "text": "Hello! How can I help you today? \ud83d\ude0a",
+                "annotations": [],
+                "content_type": "output_text",
+                "logprobs": []
+              }
+            ],
+            "chat_message_id": "98179ec6-dac7-4e12-9a2a-7d914a0e5203",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": true,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983f3599d148190ac646a793f2af2ca",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": "gpt-4.1-2025-04-14",
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "base64",
+            "chat_message_metadata_json": "KLUv/WCdA7USALbjZB5QZ/RDoWTP/t2vuI+UrZanyMykqQb0330dBGNmptddAFsAWwBHalpbT9kM0wlKfaDlhHT2IVGpj0RABKOgE3IytC3Lljr1J522QADbOjBpo8zYioSxYVpdXkohhRaXV1qrUISjkNZSCEESW2fgM2KL8CdhSz/M75f+crr+SqFhDwLLe0BIvemkN7kHy88mggHwjbJsXUJFOmxae2yY6aoi4b/XPXClLR+qYSZtllNi+9KZrp8rhBBSXCDqWIlRwYaBDE6JwWodiZFV8DoOLpYqGBXJoNHllRO+a30IvB+dZvAHv93BApokd2pYToWYKLaV6Tf8N6N+vrjmlpEitp/fvr2u/PA282uT+Ajb++ulQpmodSBFYSAGgozCYaQC2+del5/nMZLiSGyXV6THRjRmGRVsEe9aBo879NlK6nw/6f1gbAUSuvYE3EmnbnAq8PA5FMJ/2SYexvYmswdKe1ZiMOMyQlJ12osCl2VESGwn/EYX961RoEFOF+EA89UheE1pDKTTOe0XnbnUXnaHPlvvCjdIqDGRUwgpQyIjEmTCpMViIEKCEIPqARJANT0PCpgSDJoJs8XV+me7f+BsN7iU3ihyuUd0DSgxfg/NIsGaI1evRwjuarIo92ZP0SYTLuogFzRDBeuWeRge/BV4elCmWYq46ZUFpz0lPvywCIBx3vYsnuoIlCxcbkP3bo5SKTEUCLIqjqCGamI1v1qDs4DVhu5zBeZhwUw7rPu2Z1hVh3vlZpbmdzH5a9jxTspUdtMfGFAEHDbPK9qK+ugmjx1WIQ0=",
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "assistant",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983f35c3d58819093c1b0dbc2217821",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false,
+          "created_by": {
+            "response_id": "resp_182b7c44a09a4311006983f3599d148190ac646a793f2af2ca",
+            "agent": {
+              "type": "agent_id",
+              "name": "agent1",
+              "version": "1"
+            }
+          }
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUEAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUEAAAAAAAAAA==/",
+        "_etag": "\"03006ed1-0000-0700-0000-6983f35e0000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770255198
+      },
+      {
+        "id": "msg_6983f402f03c8190a635788d9ff10538",
+        "info": {
+          "created_at": 1770255365093,
+          "updated_at": 1770255365093,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983f402f03c8190a635788d9ff10538",
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "good!!"
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983f402f03c8190a635788d9ff10538",
+            "created_at": "2026-02-05T01:36:02.938553+00:00",
+            "updated_at": "2026-02-05T01:36:02.938556+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "content_type": "input_text",
+                "text": "good!!"
+              }
+            ],
+            "chat_message_id": "",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": null,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983f401f464819081c1826807dddc38",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": null,
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "json",
+            "chat_message_metadata_json": null,
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "user",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983f402f03c8190a635788d9ff10538",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUIAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUIAAAAAAAAAA==/",
+        "_etag": "\"03001fd3-0000-0700-0000-6983f4050000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770255365
+      },
+      {
+        "id": "msg_6983f403443c819080b2f68b074ce22c",
+        "info": {
+          "created_at": 1770255365093,
+          "updated_at": 1770255365093,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983f403443c819080b2f68b074ce22c",
+            "created_by": {
+              "agent": {
+                "type": "agent_id",
+                "name": "agent1",
+                "version": "1"
+              },
+              "response_id": "resp_182b7c44a09a4311006983f401f464819081c1826807dddc38"
+            },
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "Glad to hear it! If you have any questions or need help with something, just let me know. \ud83d\ude0a",
+                "annotations": [],
+                "logprobs": []
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983f403443c819080b2f68b074ce22c",
+            "created_at": "2026-02-05T01:36:03.414317+00:00",
+            "updated_at": "2026-02-05T01:36:03.414319+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "text": "Glad to hear it! If you have any questions or need help with something, just let me know. \ud83d\ude0a",
+                "annotations": [],
+                "content_type": "output_text",
+                "logprobs": []
+              }
+            ],
+            "chat_message_id": "7f69f100-4d5b-42e6-8ac0-55ad5244d770",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": true,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983f401f464819081c1826807dddc38",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": "gpt-4.1-2025-04-14",
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "base64",
+            "chat_message_metadata_json": "KLUv/WDXA+0TAHanbh9QZ/RDocwS/bmG2hpS9naeIjOTNnQZ1v0xCMbMTK8BZgBjAGQAdHnljJ+8NrTUtL6espumE5T6QMsZ6WyDU6lbIiBCUdAJORv6lkWWOnUonbZAALJ1YFJHmUwrMjJO8+qyYq45tx6z7JY6UlOE1RZjChlGQtab+IyQRTiUsaUb5vdLfzmT/kpjYQ8CyLqMivTovHbGaWZSFRn/ve6BK2+5FU4zqbO8FLIvDzNp6AohhBQvQzWWuBmJXWusVktsqJU4JV4FW7xcwYq1xAdaiRdifLDFWDWU+DAaJ1fwKlxixMgV7A52cEuLFSoYSwYvBdQld1pYbiwxh0K2Nv2F/2bU0JfkJctHY97Pf/9gV354nfnVSTwT3zvspUa5UEusqcQOZBwFKgqXkIXudfl5nsKtlpBdXpHONOI1y2ghi/ik5fIaEFJwJtKf3IPlZxOhAHhH2Y8f6CMr6eEbSm8YmVcgY/KggCfSqRecCnx8WoHwX2QTH5kHZ7MHynuYM5jMMjJSddqLEpdlREjIzviPLsk/R4kFORMmDjRfDwTwKa+JdCZOGzKHudRe9gN9ZL1rXN5nDq/gMH57EgNIqDERUwgpMyMjIjJhCgxjIEKikDr1EoAVPQ8KmBIMmgmzxcX6bzv9cOmO89T4RRrvDKyjFCvgR7m4zLqVo/NjGRf1KpRTYauhXc5c1UGgacLKwmX5MiDIXRjpYYEGMLJNsM9QgzkB6uDzg3IX7x6eXn1B3cL+tlJe4FFLiWch/lULc0dJl60uqRfik+Db8j47ztYsTlAmTYMLmqhYqtdUqJj51SZlS2sKuUAGkX7ErIWqceCAlTqCB4VkP4e0SgM=",
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "assistant",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983f403443c819080b2f68b074ce22c",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false,
+          "created_by": {
+            "response_id": "resp_182b7c44a09a4311006983f401f464819081c1826807dddc38",
+            "agent": {
+              "type": "agent_id",
+              "name": "agent1",
+              "version": "1"
+            }
+          }
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUJAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUJAAAAAAAAAA==/",
+        "_etag": "\"030020d3-0000-0700-0000-6983f4050000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770255365
+      },
+      {
+        "id": "msg_6983fa077ae881908b74d1d97f5fba31",
+        "info": {
+          "created_at": 1770256906241,
+          "updated_at": 1770256906241,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983fa077ae881908b74d1d97f5fba31",
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "my name is deep"
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983fa077ae881908b74d1d97f5fba31",
+            "created_at": "2026-02-05T02:01:43.480251+00:00",
+            "updated_at": "2026-02-05T02:01:43.480253+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "content_type": "input_text",
+                "text": "my name is deep"
+              }
+            ],
+            "chat_message_id": "",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": null,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983fa06646481908431eb35cd26cfee",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": null,
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "json",
+            "chat_message_metadata_json": null,
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "user",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983fa077ae881908b74d1d97f5fba31",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUNAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUNAAAAAAAAAA==/",
+        "_etag": "\"030029df-0000-0700-0000-6983fa0a0000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770256906
+      },
+      {
+        "id": "msg_6983fa07d57081908b8bb5ff8995ecbd",
+        "info": {
+          "created_at": 1770256906241,
+          "updated_at": 1770256906241,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983fa07d57081908b8bb5ff8995ecbd",
+            "created_by": {
+              "agent": {
+                "type": "agent_id",
+                "name": "agent1",
+                "version": "1"
+              },
+              "response_id": "resp_182b7c44a09a4311006983fa06646481908431eb35cd26cfee"
+            },
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "Nice to meet you, Deep! \ud83d\ude0a How can I assist you today?",
+                "annotations": [],
+                "logprobs": []
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983fa07d57081908b8bb5ff8995ecbd",
+            "created_at": "2026-02-05T02:01:43.964790+00:00",
+            "updated_at": "2026-02-05T02:01:43.964791+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "text": "Nice to meet you, Deep! \ud83d\ude0a How can I assist you today?",
+                "annotations": [],
+                "content_type": "output_text",
+                "logprobs": []
+              }
+            ],
+            "chat_message_id": "0edf7d9a-efe4-4877-80e8-a2422f0c8f84",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": true,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983fa06646481908431eb35cd26cfee",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": "gpt-4.1-2025-04-14",
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "base64",
+            "chat_message_metadata_json": "KLUv/WC1Az0TAAZlaB5QZ/RDoWTP/t2vuI+UrZanyMykTYG2/30dBGNmptdhAF8AXQCtDyw1ra2nbIbpBKU+0HJCOvuAFKlZIiCCKuiEnAxtyyZLnfqTTlsgINk6MGmjzNiKhLFhWl1eyDIKVWhxuTgMZCAEAxXYKtBxpGSdgc8oWYQ/CVv6YX6/9JfT9VcKDXsQcg+Wn00EBfCNssm6hIp02LT22DDTVUXCf6974EpbRkjDTNoss5TsS2e6fl4ghFDByGClkGLrOPhYBi/G2FiFwcZRsJUYMSsgSMEpcUIUIyspZsngAlNpGTS6vHLCdwEGf/DbHSygSHKnhuVDpaiMZCvTb/hvRv18cc0ts0JsP799e1354W3m1ybxEbb310uFkhUKrZUOViCEobUKSyX73Ovy8zwKMZZXpMdGNGYZGcki3rVc3gNCxZtOeguPO/STldT5ftL7wdgKJHTtCbiTTt3gVODhgxCE/yabeBjbm8weKO1ZiMGMy+hI1WkvClyWESElO+E3urhvjQINcroIB5ivDsFrSmMgnc5pv+jMpfayO/ST9a5weT86LUmoIRFTCCk0IyMiMmHSDAcgQoIQc+oBEmAlPQ8KmBIMmgmzxcX6b7t+oHS3dkp5GpV34sVZimvwo15cZL2U4/WUh/v3RMz72OdT+zmuRCDoNGNlMlF2GRiXiyM1LWoDRsIE882slxMqDtJ+sO3U7mXl1ReULbxo++gLLGogcSbEt2ox5mjqhdVM9ZZpkZ+smukz54kR4uL6B6UniPk1ykKNKvUFMz+1SVtHRAgFvB0xL7JVolB23I5V1QL1GZq9O6RVGg==",
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "assistant",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983fa07d57081908b8bb5ff8995ecbd",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false,
+          "created_by": {
+            "response_id": "resp_182b7c44a09a4311006983fa06646481908431eb35cd26cfee",
+            "agent": {
+              "type": "agent_id",
+              "name": "agent1",
+              "version": "1"
+            }
+          }
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUOAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUOAAAAAAAAAA==/",
+        "_etag": "\"03002adf-0000-0700-0000-6983fa0a0000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770256906
+      },
+      {
+        "id": "msg_6983fa0b9e908190a1d83f6629944f39",
+        "info": {
+          "created_at": 1770256909945,
+          "updated_at": 1770256909945,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983fa0b9e908190a1d83f6629944f39",
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "what is my name"
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983fa0b9e908190a1d83f6629944f39",
+            "created_at": "2026-02-05T02:01:47.619525+00:00",
+            "updated_at": "2026-02-05T02:01:47.619529+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "content_type": "input_text",
+                "text": "what is my name"
+              }
+            ],
+            "chat_message_id": "",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": null,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983fa0a314c81908938f109eb33450c",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": null,
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "json",
+            "chat_message_metadata_json": null,
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "user",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983fa0b9e908190a1d83f6629944f39",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUSAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUSAAAAAAAAAA==/",
+        "_etag": "\"030038df-0000-0700-0000-6983fa0d0000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770256909
+      },
+      {
+        "id": "msg_6983fa0bf6448190ac8eb7315c27967c",
+        "info": {
+          "created_at": 1770256909945,
+          "updated_at": 1770256909945,
+          "deleted": false
+        },
+        "metadata": {},
+        "object": {
+          "item_resource": {
+            "type": "message",
+            "id": "msg_182b7c44a09a4311006983fa0bf6448190ac8eb7315c27967c",
+            "created_by": {
+              "agent": {
+                "type": "agent_id",
+                "name": "agent1",
+                "version": "1"
+              },
+              "response_id": "resp_182b7c44a09a4311006983fa0a314c81908938f109eb33450c"
+            },
+            "partition_key": "182b7c44a09a431100",
+            "status": "completed",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "Your name is Deep. \ud83d\ude0a",
+                "annotations": [],
+                "logprobs": []
+              }
+            ]
+          },
+          "partition_id": "182b7c44a09a431100",
+          "type": {},
+          "project_id": "aisvcgu5v@projectgu5v@AML",
+          "object_type": "item",
+          "raw_rapi_serialized_item": {
+            "id": "msg_6983fa0bf6448190ac8eb7315c27967c",
+            "created_at": "2026-02-05T02:01:48.016735+00:00",
+            "updated_at": "2026-02-05T02:01:48.016738+00:00",
+            "deleted_at": null,
+            "etag": null,
+            "is_visible": true,
+            "ttl": -1,
+            "deletion_reason": null,
+            "deletion_origin": null,
+            "organization_id": "418f78389a6c4d639716ca854c3828e3",
+            "project_id": "5a255147-e837-4ff0-b3ae-37f23a5191e6",
+            "item_type": "message",
+            "content": [
+              {
+                "text": "Your name is Deep. \ud83d\ude0a",
+                "annotations": [],
+                "content_type": "output_text",
+                "logprobs": []
+              }
+            ],
+            "chat_message_id": "ef6728aa-a827-40f9-9d8c-d1eb07de6d1d",
+            "recipient": "all",
+            "channel": null,
+            "discounted": false,
+            "end_turn": true,
+            "status": "completed",
+            "created_by_response_id": {
+              "partition_key": "182b7c44a09a431100",
+              "id": "resp_6983fa0a314c81908938f109eb33450c",
+              "legacy_id": false,
+              "flags": {
+                "is_not_persisted": false,
+                "unknown_bits": [
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ]
+              }
+            },
+            "originating_model": "gpt-4.1-2025-04-14",
+            "chatberry_version": null,
+            "chat_message_metadata_encoding": "base64",
+            "chat_message_metadata_json": "KLUv/WCTA4USAMbjZB9gZ/MDGKORHZNMovI/kWpyHgRRYkgs/l2OhRIAwHEBXQBbAFkAqGltPWUvSy8o9YGWE9LZiJVQI4hwCEdBL+RcaFOWLXXqTzptgQC2dWBSJpmxEwkjs7S6XDAYa7W4fKQDqYKBoI4BKaSjFGLrC3w+bBX+JGzpiPn90l9O118pPOxBfAy2inctlxdxTnrTSW9yD5abRYQD4Jlk2bqEiXTItPbILNPVRMJ/r3vgSVtWBzHLpMyyYvsyMV0/T+eck9hQCSkgNhAjhrUSp2XwOgZiA1IGg0aXV074rjUCCbwfE+3gb9lSh9/uYAFd7vSwnJCYDLZ16T/8N59+rrjmlg+EYvv5y6p9e1254WXmV2bxEbb310qFEqnCOYaRjqXWSsg6jAXA9rnX5aZpjmUgiK3yifTYirZsjSfos5U08f2k94OxFUjo2hNwJ536wanAw0YdpPBftouHsb257EHSmsIymHH5KFSdtpJAZfkQENsJv1HFfWMSeJDTRTiwfE0QvJa0BdLpnPaLianUXvYEfbbeFW5FqCEVU8owUiIykUyYRI0BIEKCEIPqARJgBUEQCpgSoZowW2ax/hm7jqCMt4yV0iPS8TFpzSzRia83I9laP1f2sYI7zliY+7H3ZZMdl0iQK9q3gjDIvgwbzNVMelA2L0cc6iscivuCWI9szlifV2R9LXnArQBtmipMiF3EyYolXQQ1dzXotUJNgPSEmnMr5LgA1Lqp3cZZDGCGu7IUq/izTIrKWLh6O0DImNHWPW6SC3XlQXOypENHpQE=",
+            "required_reasoning_item_id": null,
+            "conversation_ids": [
+              {
+                "partition_key": "182b7c44a09a431100",
+                "id": "conv_moZHeudIECYHGMJjzE0y8treaL8pDQc9",
+                "legacy_id": false,
+                "flags": {
+                  "is_not_persisted": false,
+                  "unknown_bits": [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                }
+              }
+            ],
+            "is_persisted": true,
+            "role": "assistant",
+            "author": null,
+            "type": "ResponsesApiItem",
+            "partition_key": "182b7c44a09a431100"
+          },
+          "Id": "msg_182b7c44a09a4311006983fa0bf6448190ac8eb7315c27967c",
+          "organizationId": "418f78389a6c4d639716ca854c3828e3",
+          "hidden_item": false,
+          "created_by": {
+            "response_id": "resp_182b7c44a09a4311006983fa0a314c81908938f109eb33450c",
+            "agent": {
+              "type": "agent_id",
+              "name": "agent1",
+              "version": "1"
+            }
+          }
+        },
+        "partition_id": "aisvcgu5v@projectgu5v@AML/182b7c44a09a431100",
+        "_rid": "tTwNANXzoHUTAAAAAAAAAA==",
+        "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUTAAAAAAAAAA==/",
+        "_etag": "\"030039df-0000-0700-0000-6983fa0d0000\"",
+        "_attachments": "attachments/",
+        "_ts": 1770256909
+      }
+    ],
+    "conv2item": null,
+    "_rid": "tTwNANXzoHUBAAAAAAAAAA==",
+    "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUBAAAAAAAAAA==/",
+    "_etag": "\"0400f721-0000-0700-0000-698417e80000\"",
+    "_attachments": "attachments/",
+    "_ts": 1770264552
+  },
+  {
+    "id": "conv_iPGoD23xh6mQ9FyJkadnxPOTHY0jEQmo",
+    "info": {
+      "created_at": 1770257588984,
+      "updated_at": 1770257588984,
+      "deleted": false
+    },
+    "metadata": {
+      "uid": "378789217893712",
+      "verified": true
+    },
+    "object": {
+      "id": "conv_2432f0f049aa925600iPGoD23xh6mQ9FyJkadnxPOTHY0jEQmo",
+      "metadata": {},
+      "partition_id": "2432f0f049aa925600",
+      "project_id": "aisvcgu5v@projectgu5v@AML",
+      "object_type": "conversation"
+    },
+    "partition_id": "aisvcgu5v@projectgu5v@AML/2432f0f049aa925600",
+    "messages": [],
+    "conv2item": null,
+    "_rid": "tTwNANXzoHUXAAAAAAAAAA==",
+    "_self": "dbs/tTwNAA==/colls/tTwNANXzoHU=/docs/tTwNANXzoHUXAAAAAAAAAA==/",
+    "_etag": "\"04002922-0000-0700-0000-698417fb0000\"",
+    "_attachments": "attachments/",
+    "_ts": 1770264571
+  }
+]

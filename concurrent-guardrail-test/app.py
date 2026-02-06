@@ -22,7 +22,7 @@ executor = ThreadPoolExecutor(max_workers=10)
 # Configuration - using environment variables with defaults from environments.yaml
 AZURE_PROJECT_ENDPOINT = os.environ.get(
     "AZURE_PROJECT_ENDPOINT", 
-    "https://sweeden-test.services.ai.azure.com/api/projects/swe-proj"
+    "https://aisvcgu5v.services.ai.azure.com/api/projects/projectgu5v"
 )
 
 # Workflow to use
@@ -30,13 +30,14 @@ WORKFLOW_NAME = os.environ.get("WORKFLOW_NAME", "purple-workflow")
 WORKFLOW_VERSION = os.environ.get("WORKFLOW_VERSION", "1")
 
 # Guardrail agent name
-GUARDRAIL_AGENT_NAME = os.environ.get("GUARDRAIL_AGENT_NAME", "blue-guardrail")
+GUARDRAIL_AGENT_NAME = os.environ.get("GUARDRAIL_AGENT_NAME", "guardrail-agent")
 
 # Global state
 conversation_history: List[Dict[str, str]] = []
 system_instructions: str = "You are a helpful assistant."
-# Store conversation ID for multi-turn conversations
-current_conversation_id: str = None
+# Store conversation IDs for multi-turn conversations (separate for guardrail and workflow)
+guardrail_conversation_id: str = None
+workflow_conversation_id: str = None
 
 # Store timing data for visualization
 timing_logs: List[Dict[str, Any]] = []
@@ -138,17 +139,18 @@ def call_guardrail_sync(user_message: str, conversation_id: str, timing: TimingE
             try:
                 if hasattr(e, 'body') and isinstance(e.body, dict):
                     content_filters_json = e.body.get('content_filters')
+                    
+                    # Parse the actual filter results to determine reason
+                    if content_filters_json:
+                        for cf in content_filters_json:
+                            results = cf.get('content_filter_results', {})
+                            for filter_name, filter_data in results.items():
+                                if isinstance(filter_data, dict) and filter_data.get('filtered'):
+                                    severity = filter_data.get('severity', 'unknown')
+                                    filter_reason = f"Azure content filter: {filter_name} detected (severity: {severity})"
+                                    break
             except:
                 pass
-            
-            if "self_harm" in error_str:
-                filter_reason = "Azure content filter: self-harm detected"
-            elif "violence" in error_str and "'filtered': True" in error_str:
-                filter_reason = "Azure content filter: violence detected"
-            elif "hate" in error_str and "'filtered': True" in error_str:
-                filter_reason = "Azure content filter: hate speech detected"
-            elif "sexual" in error_str and "'filtered': True" in error_str:
-                filter_reason = "Azure content filter: sexual content detected"
             
             print(f"[GUARDRAIL] Content filter triggered - blocking request")
             return {
@@ -162,10 +164,11 @@ def call_guardrail_sync(user_message: str, conversation_id: str, timing: TimingE
         return {"guardrailPassed": True, "reason": f"Guardrail error: {str(e)}"}
 
 
-def stream_workflow_response(user_message: str, queue: Queue, timing: TimingEvents):
+def stream_workflow_response(user_message: str, conversation_id: str, queue: Queue, timing: TimingEvents):
     """
     Stream response from Azure AI Workflow.
     Puts events into a queue for async consumption.
+    Uses persistent conversation ID for multi-turn context.
     """
     timing.add("purple_workflow", "start")
     
@@ -186,15 +189,11 @@ def stream_workflow_response(user_message: str, queue: Queue, timing: TimingEven
             openai_client = project_client.get_openai_client()
             timing.add("purple_workflow", "openai_client.done")
             
-            # Create a new conversation for this chat
-            timing.add("purple_workflow", "conversation.create.start")
-            conversation = openai_client.conversations.create()
-            timing.add("purple_workflow", "conversation.create.done")
-            
-            # Stream the response
+            # Stream the response using persistent conversation
+            print(f"[WORKFLOW] Using conversation: {conversation_id}")
             timing.add("purple_workflow", "responses.create.start")
             stream = openai_client.responses.create(
-                conversation=conversation.id,
+                conversation=conversation_id,
                 extra_body={"agent": {"name": WORKFLOW_NAME, "type": "agent_reference"}},
                 input=user_message,
                 stream=True,
@@ -250,14 +249,15 @@ def stream_workflow_response(user_message: str, queue: Queue, timing: TimingEven
         queue.put(None)  # Signal end of stream
 
 
-async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], conversation_id: str, timing: TimingEvents):
+async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], guardrail_conv_id: str, workflow_conv_id: str, timing: TimingEvents):
     """
     Send messages to Azure AI Workflow while concurrently checking guardrail.
     Buffers workflow events until guardrail responds.
     
     Args:
         messages: List of message dicts with 'role' and 'content'
-        conversation_id: Conversation ID to provide context to guardrail
+        guardrail_conv_id: Conversation ID for guardrail context
+        workflow_conv_id: Conversation ID for workflow context
         timing: TimingEvents object to record timings
     
     Yields:
@@ -274,7 +274,7 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], conve
     timing.add("request", "buffer.start")
     
     # Start workflow streaming in a thread
-    workflow_thread = threading.Thread(target=stream_workflow_response, args=(user_message, workflow_queue, timing))
+    workflow_thread = threading.Thread(target=stream_workflow_response, args=(user_message, workflow_conv_id, workflow_queue, timing))
     workflow_thread.start()
     
     # Start guardrail check concurrently
@@ -283,7 +283,7 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], conve
         executor, 
         call_guardrail_sync, 
         user_message,
-        conversation_id,
+        guardrail_conv_id,
         timing
     )
     
@@ -378,26 +378,53 @@ def set_instructions(instructions: str = ""):
 @app.get("/chat")
 async def chat_endpoint(msg: str):
     """Chat endpoint that streams responses from Azure AI Workflow with concurrent guardrail check."""
-    global conversation_history, timing_logs, current_conversation_id
+    global conversation_history, timing_logs, guardrail_conversation_id, workflow_conversation_id
     
     # Create timing data for this request
     request_id = f"{datetime.now().isoformat()}_{len(timing_logs)}"
     timing = TimingEvents(request_id=request_id)
     timing.add("request", "start")
     
-    # Create or reuse conversation for context
-    if current_conversation_id is None:
-        timing.add("request", "conversation.create.start")
-        credential = DefaultAzureCredential()
-        project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
-        with project_client:
-            openai_client = project_client.get_openai_client()
-            conversation = openai_client.conversations.create()
-            current_conversation_id = conversation.id
-        timing.add("request", "conversation.create.done", conversation_id=current_conversation_id)
-        print(f"[CONVERSATION] Created new conversation: {current_conversation_id}")
-    else:
-        print(f"[CONVERSATION] Reusing conversation: {current_conversation_id}")
+    # Create or reuse conversations for guardrail and workflow (in parallel if both need creation)
+    credential = DefaultAzureCredential()
+    project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+    
+    with project_client:
+        openai_client = project_client.get_openai_client()
+        
+        needs_guardrail = guardrail_conversation_id is None
+        needs_workflow = workflow_conversation_id is None
+        
+        if needs_guardrail or needs_workflow:
+            loop = asyncio.get_event_loop()
+            
+            async def create_conversations():
+                global guardrail_conversation_id, workflow_conversation_id
+                futures = []
+                
+                if needs_guardrail:
+                    timing.add("request", "guardrail_conversation.create.start")
+                    futures.append(("guardrail", loop.run_in_executor(executor, openai_client.conversations.create)))
+                
+                if needs_workflow:
+                    timing.add("request", "workflow_conversation.create.start")
+                    futures.append(("workflow", loop.run_in_executor(executor, openai_client.conversations.create)))
+                
+                for name, future in futures:
+                    conversation = await future
+                    if name == "guardrail":
+                        guardrail_conversation_id = conversation.id
+                        timing.add("request", "guardrail_conversation.create.done", conversation_id=guardrail_conversation_id)
+                        print(f"[CONVERSATION] Created guardrail conversation: {guardrail_conversation_id}")
+                    else:
+                        workflow_conversation_id = conversation.id
+                        timing.add("request", "workflow_conversation.create.done", conversation_id=workflow_conversation_id)
+                        print(f"[CONVERSATION] Created workflow conversation: {workflow_conversation_id}")
+            
+            await create_conversations()
+        else:
+            print(f"[CONVERSATION] Reusing guardrail conversation: {guardrail_conversation_id}")
+            print(f"[CONVERSATION] Reusing workflow conversation: {workflow_conversation_id}")
     
     # Add user message to history
     conversation_history.append({"role": "user", "content": msg})
@@ -407,7 +434,7 @@ async def chat_endpoint(msg: str):
     
     async def event_stream():
         full_response = ""
-        async for result in chat_with_workflow_and_guardrail(messages, current_conversation_id, timing):
+        async for result in chat_with_workflow_and_guardrail(messages, guardrail_conversation_id, workflow_conversation_id, timing):
             if result["type"] == "done":
                 full_response = result["full_response"]
             else:
@@ -416,30 +443,32 @@ async def chat_endpoint(msg: str):
         # Add assistant response to local history
         conversation_history.append({"role": "assistant", "content": full_response})
         
-        # Add the exchange to the Azure conversation for guardrail context
-        try:
-            credential = DefaultAzureCredential()
-            project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
-            with project_client:
-                openai_client = project_client.get_openai_client()
-                # Add user message and assistant response to conversation
-                openai_client.responses.create(
-                    input=[
-                        {"role": "user", "content": msg},
-                        {"role": "assistant", "content": full_response}
-                    ],
-                    conversation=current_conversation_id,
-                    extra_body={"agent": {"name": GUARDRAIL_AGENT_NAME, "type": "agent_reference"}},
-                )
-                print(f"[CONVERSATION] Added exchange to conversation {current_conversation_id}")
-        except Exception as e:
-            print(f"[CONVERSATION] Failed to add to conversation: {e}")
-        
         # Store timing data
         timing_logs.append(timing.to_dict())
         
         # Send done event with timing data
         yield f"data: {json.dumps({'type': 'done', 'timing': timing.to_dict()})}\n\n"
+        
+        # Add the assistant response to the guardrail conversation for context (after yielding done)
+        try:
+            credential = DefaultAzureCredential()
+            project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+            with project_client:
+                openai_client = project_client.get_openai_client()
+                # Add assistant response to guardrail conversation (user message already there from guardrail call)
+                openai_client.conversations.items.create(
+                    guardrail_conversation_id,
+                    items=[
+                        {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": full_response,
+                        }
+                    ],
+                )
+                print(f"[CONVERSATION] Added assistant response to guardrail conversation {guardrail_conversation_id}")
+        except Exception as e:
+            print(f"[CONVERSATION] Failed to add to guardrail conversation: {e}")
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -452,10 +481,11 @@ def history_endpoint():
 
 @app.get("/clear")
 def clear_endpoint():
-    """Clear the conversation history and reset conversation ID."""
-    global conversation_history, current_conversation_id
+    """Clear the conversation history and reset both conversation IDs."""
+    global conversation_history, guardrail_conversation_id, workflow_conversation_id
     conversation_history = []
-    current_conversation_id = None
+    guardrail_conversation_id = None
+    workflow_conversation_id = None
     return {"status": "success", "message": "History cleared"}
 
 
