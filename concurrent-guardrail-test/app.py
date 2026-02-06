@@ -208,11 +208,13 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
             openai_client = project_client.get_openai_client()
             timing.add("purple_workflow", "openai_client.done")
             
-            # Stream the response using persistent conversation
+            # Stream the response without adding to conversation
+            # We'll manually add messages after guardrail check
             print(f"[WORKFLOW] Using conversation: {conversation_id}")
             timing.add("purple_workflow", "responses.create.start")
+            
             stream = openai_client.responses.create(
-                conversation=conversation_id,
+                conversation="",
                 extra_body={"agent": {"name": WORKFLOW_NAME, "type": "agent_reference"}},
                 input=user_message,
                 stream=True,
@@ -230,7 +232,6 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
                 event_name = event_type_str.replace("ResponseStreamEventType.", "")
                 
                 # Debug: Print full event structure
-                print(f"[WORKFLOW] Event: {event_name}, has item: {hasattr(event, 'item')}, has id: {hasattr(event, 'id')}")
                 if hasattr(event, 'item'):
                     print(f"[WORKFLOW]   Item type: {getattr(event.item, 'type', 'N/A')}, Item id: {getattr(event.item, 'id', 'N/A')}")
                     if hasattr(event.item, 'id') and event.item.id:
@@ -458,20 +459,34 @@ async def chat_endpoint(msg: str):
     timing = TimingEvents(request_id=request_id)
     timing.add("request", "start")
     
-    # Create or reuse conversation for workflow
-    if workflow_conversation_id is None:
-        credential = DefaultAzureCredential()
-        project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+    # Create or retrieve conversation for workflow
+    credential = DefaultAzureCredential()
+    project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+    
+    with project_client:
+        openai_client = project_client.get_openai_client()
         
-        with project_client:
-            openai_client = project_client.get_openai_client()
+        if workflow_conversation_id is None:
             timing.add("request", "workflow_conversation.create.start")
             conversation = openai_client.conversations.create()
             workflow_conversation_id = conversation.id
             timing.add("request", "workflow_conversation.create.done", conversation_id=workflow_conversation_id)
             print(f"[CONVERSATION] Created workflow conversation: {workflow_conversation_id}")
-    else:
-        print(f"[CONVERSATION] Reusing workflow conversation: {workflow_conversation_id}")
+        else:
+            try:
+                timing.add("request", "workflow_conversation.retrieve.start")
+                conversation = openai_client.conversations.retrieve(workflow_conversation_id)
+                timing.add("request", "workflow_conversation.retrieve.done", conversation_id=workflow_conversation_id)
+                print(f"[CONVERSATION] Retrieved workflow conversation: {workflow_conversation_id}")
+            except Exception as retrieve_error:
+                print(f"[CONVERSATION] Failed to retrieve conversation {workflow_conversation_id}: {retrieve_error}")
+                timing.add("request", "workflow_conversation.retrieve.error", error=str(retrieve_error)[:100])
+                # Create a new conversation if retrieve fails
+                timing.add("request", "workflow_conversation.create.start")
+                conversation = openai_client.conversations.create()
+                workflow_conversation_id = conversation.id
+                timing.add("request", "workflow_conversation.create.done", conversation_id=workflow_conversation_id)
+                print(f"[CONVERSATION] Created new workflow conversation: {workflow_conversation_id}")
     
     # Add user message to history
     conversation_history.append({"role": "user", "content": msg})
@@ -486,6 +501,26 @@ async def chat_endpoint(msg: str):
                 full_response = result["full_response"]
             else:
                 yield f"data: {json.dumps(result)}\n\n"
+        
+        # Only add to conversation history if guardrail passed (not a guardrail hit message)
+        if timing.guardrail_passed:
+            # Add user message and assistant response to the conversation history
+            try:
+                credential = DefaultAzureCredential()
+                project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
+                with project_client:
+                    openai_client = project_client.get_openai_client()
+                    # Add both user message and assistant response to conversation
+                    items_result = openai_client.conversations.items.create(
+                        workflow_conversation_id,
+                        items=[
+                            {"type": "message", "role": "user", "content": msg},
+                            {"type": "message", "role": "assistant", "content": full_response}
+                        ]
+                    )
+                    print(f"[CONVERSATION] Added user message and assistant response to conversation {workflow_conversation_id}")
+            except Exception as e:
+                print(f"[CONVERSATION] Failed to add messages to conversation: {e}")
         
         # Add assistant response to local history
         conversation_history.append({"role": "assistant", "content": full_response})
