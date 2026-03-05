@@ -1,0 +1,36 @@
+# Azure DevOps Pipeline for Foundry Agent Deployment
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: DeployDev
+  displayName: 'Deploy to Development'
+  jobs:
+  - template: deploy-job.yml
+    parameters:
+      environment: 'dev'
+
+- stage: DeployTest
+  displayName: 'Deploy to Test'
+  dependsOn: DeployDev
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - template: deploy-job.yml
+    parameters:
+      environment: 'test'
+
+- stage: DeployProd
+  displayName: 'Deploy to Production'
+  dependsOn: DeployTest
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - template: deploy-job.yml
+    parameters:
+      environment: 'prod'

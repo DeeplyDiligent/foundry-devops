@@ -222,6 +222,7 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
             full_response = ""
             started = False
             message_ids = []  # Track message IDs from the response
+            user_message_id = None  # Track the user message ID specifically
             
             for event in stream:
                 # Get event type as string
@@ -229,11 +230,17 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
                 # Simplify event type name
                 event_name = event_type_str.replace("ResponseStreamEventType.", "")
                 
-                # Debug: Print full event structure
-                print(f"[WORKFLOW] Event: {event_name}, has item: {hasattr(event, 'item')}, has id: {hasattr(event, 'id')}")
                 if hasattr(event, 'item'):
                     print(f"[WORKFLOW]   Item type: {getattr(event.item, 'type', 'N/A')}, Item id: {getattr(event.item, 'id', 'N/A')}")
                     if hasattr(event.item, 'id') and event.item.id:
+                        item_type = getattr(event.item, 'type', None)
+                        item_role = getattr(event.item, 'role', None)
+                        
+                        # Track user message separately
+                        if item_type == 'message' and item_role == 'user':
+                            user_message_id = event.item.id
+                            print(f"[WORKFLOW]   Captured USER message ID: {event.item.id}")
+                        
                         message_ids.append(event.item.id)
                         print(f"[WORKFLOW]   Captured message ID: {event.item.id}")
                 
@@ -261,17 +268,17 @@ def stream_workflow_response(user_message: str, conversation_id: str, queue: Que
             
             timing.add("purple_workflow", "done")
             
-            print(f"[WORKFLOW] Stream complete. Collected message IDs: {message_ids}")
             
             # Deduplicate message IDs while preserving order
             unique_message_ids = list(dict.fromkeys(message_ids))
             print(f"[WORKFLOW] Unique message IDs: {unique_message_ids}")
+            print(f"[WORKFLOW] User message ID: {user_message_id}")
             
             if not started:
                 queue.put({"type": "message", "start": True})
             
             queue.put({"type": "message", "end": True})
-            queue.put({"type": "done", "full_response": full_response, "message_ids": unique_message_ids})
+            queue.put({"type": "done", "full_response": full_response, "message_ids": unique_message_ids, "user_message_id": user_message_id})
             
     except Exception as e:
         timing.add("purple_workflow", "error", error=str(e)[:100])
@@ -358,25 +365,35 @@ async def chat_with_workflow_and_guardrail(messages: List[Dict[str, str]], workf
         # Wait for workflow to complete and collect all remaining events (including message IDs)
         print(f"[GUARDRAIL] Blocked - waiting for workflow to complete so we can clean up")
         workflow_message_ids = []
+        workflow_user_message_id = None
         if not workflow_done:
             while True:
                 event = await loop.run_in_executor(None, workflow_queue.get)
                 if event is None:
                     break
-                if event["type"] == "done" and "message_ids" in event:
-                    workflow_message_ids = event["message_ids"]
+                if event["type"] == "done":
+                    if "message_ids" in event:
+                        workflow_message_ids = event["message_ids"]
+                    if "user_message_id" in event:
+                        workflow_user_message_id = event["user_message_id"]
                     print(f"[GUARDRAIL] Workflow completed with message IDs: {workflow_message_ids}")
+                    print(f"[GUARDRAIL] User message ID: {workflow_user_message_id}")
         
-        # Delete the workflow messages from the conversation
-        if workflow_message_ids:
-            timing.add("request", "cleanup.start", message_count=len(workflow_message_ids))
-            print(f"[GUARDRAIL] Deleting {len(workflow_message_ids)} messages from workflow conversation {workflow_conv_id}")
+        # Delete the workflow messages AND user message from the conversation
+        all_message_ids_to_delete = []
+        if workflow_user_message_id:
+            all_message_ids_to_delete.append(workflow_user_message_id)
+        all_message_ids_to_delete.extend(workflow_message_ids)
+        
+        if all_message_ids_to_delete:
+            timing.add("request", "cleanup.start", message_count=len(all_message_ids_to_delete))
+            print(f"[GUARDRAIL] Deleting {len(all_message_ids_to_delete)} messages (including user message) from workflow conversation {workflow_conv_id}")
             try:
                 credential = DefaultAzureCredential()
                 project_client = AIProjectClient(endpoint=AZURE_PROJECT_ENDPOINT, credential=credential)
                 with project_client:
                     openai_client = project_client.get_openai_client()
-                    for msg_id in workflow_message_ids:
+                    for msg_id in all_message_ids_to_delete:
                         try:
                             print(f"[GUARDRAIL] Deleting message: {msg_id}")
                             timing.add("request", "cleanup.delete", message_id=msg_id)
