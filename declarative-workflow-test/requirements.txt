@@ -1,0 +1,5 @@
+fastapi>=0.110.0
+uvicorn>=0.27.0
+agent-framework-declarative --pre
+agent-framework-foundry --pre
+azure-identity>=1.25.0

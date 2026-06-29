@@ -1,0 +1,22 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_wf
+  actions:
+    - kind: InvokeAzureAgent
+      id: agent1
+      agent:
+        name: helllo-world
+      description: First agent in sequential workflow
+      conversationId: =System.ConversationId
+      input:
+        messages: =System.LastMessage
+      output:
+        messages: Local.LatestMessage
+        autoSend: true
+    - kind: SendActivity
+      activity: "{Local.LatestMessage}"
+      id: action-1766539481750
+id: ""
+name: test
+description: ""

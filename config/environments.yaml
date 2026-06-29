@@ -2,7 +2,7 @@
 
 # Development
 dev:
-  azure_project_endpoint: "https://sweeden-test.services.ai.azure.com/api/projects/swe-proj"
+  azure_project_endpoint: "https://oai-resource-aueast.services.ai.azure.com/api/projects/oai-project-aueast"
   resource_group: "Dev"
   subscription_id: "${AZURE_SUBSCRIPTION_ID}"
   

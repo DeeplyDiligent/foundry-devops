@@ -27,9 +27,17 @@ foundry-devops/
 │   │   └── data-analyst-tests.yaml
 │   └── results/            # Test results (generated)
 ├── scripts/                # Deployment and utility scripts
-│   ├── deployment/deploy-agents-and-workflows.py
-│   ├── validate_yamls.py
-│   └── run_evaluations.py
+│   ├── deployment/
+│   │   ├── deploy-agents-and-workflows.py
+│   │   ├── deploy-evaluators.py
+│   │   ├── deploy-evaluation-rules.py
+│   │   └── validate_yamls.py
+│   ├── import/
+│   │   └── import-from-foundry.py
+│   └── runtime/
+│       ├── run_evaluation.py
+│       ├── read_conversation.py
+│       └── fetch_conversation.py
 ├── config/                 # Configuration files
 │   └── environments.yaml
 └── requirements.txt
@@ -107,6 +115,35 @@ Configure these secrets in your GitHub repository:
 
 ## 📝 Creating Agents
 
+### Option 1: Import Existing Agents from Foundry
+
+Import agents and workflows from your existing Foundry project:
+
+```bash
+# List all available agents and workflows
+python scripts/import/import-from-foundry.py --environment dev --list-only
+
+# Import all new agents (skips existing)
+python scripts/import/import-from-foundry.py --environment dev --type agents
+
+# Import all new workflows (skips existing)
+python scripts/import/import-from-foundry.py --environment dev --type workflows
+
+# Import both agents and workflows
+python scripts/import/import-from-foundry.py --environment dev --type all
+
+# Import a specific agent
+python scripts/import/import-from-foundry.py --environment dev --name my-agent
+
+# Import a specific version
+python scripts/import/import-from-foundry.py --environment dev --name my-agent --version 2
+
+# Overwrite existing local files
+python scripts/import/import-from-foundry.py --environment dev --type all --overwrite
+```
+
+### Option 2: Create Agent Manually
+
 Create a new agent by adding a YAML file to the `agents/` directory:
 
 ```yaml
@@ -129,6 +166,17 @@ definition:
 ```
 
 ## 📊 Creating Workflows
+
+### Option 1: Import Existing Workflows from Foundry
+
+Use the import script to fetch workflows from your Foundry project:
+
+```bash
+# Import all new workflows
+python scripts/import/import-from-foundry.py --environment dev --type workflows
+```
+
+### Option 2: Create Workflow Manually
 
 Create a new workflow by adding a YAML file to the `workflows/` directory:
 
