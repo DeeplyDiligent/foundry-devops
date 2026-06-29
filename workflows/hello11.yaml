@@ -1,0 +1,20 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_wf
+  actions:
+    - kind: ParseValue
+      id: parse_json
+      variable: Local.Payload
+      valueType:
+        kind: Record
+        properties:
+          UserQuery: String
+          secondParam: String
+      value: =System.LastMessageText
+    - kind: SendActivity
+      id: send_query
+      activity: "{Local.Payload}"
+    - kind: EndConversation
+      id: end
+name: hello11

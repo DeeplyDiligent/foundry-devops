@@ -1,0 +1,18 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_wf
+  actions:
+    - kind: InvokeAzureAgent
+      id: action-1766538397782
+      conversationId: =System.ConversationId
+      agent:
+        name: new
+      input:
+        messages: =System.LastMessage
+      output:
+        autoSend: true
+        messages: Local.Var1506
+id: ""
+name: hello111
+description: ""

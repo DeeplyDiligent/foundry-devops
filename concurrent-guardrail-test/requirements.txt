@@ -1,5 +1,6 @@
-# Agent Framework (v2) - New Foundry Agent Service
-agent-framework-azure-ai>=0.1.0
+# Agent Framework packages for local declarative workflows
+agent-framework-declarative>=1.0.0b260429
+agent-framework-foundry>=1.0.0
 
 # Legacy SDKs (can be removed once fully migrated to v2)
 azure-ai-projects>=1.0.0

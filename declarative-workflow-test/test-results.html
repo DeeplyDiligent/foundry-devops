@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Filter Test Results - Agent vs Workflow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #58a6ff;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #8b949e;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .issue-alert {
+            background: #3d2626;
+            border-left: 4px solid #f85149;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 6px;
+        }
+        
+        .issue-alert strong {
+            color: #f85149;
+        }
+        
+        .test-info {
+            background: #161b22;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+        
+        .test-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .test-info strong {
+            color: #79c0ff;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-column {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .test-column h2 {
+            background: #161b22;
+            padding: 15px;
+            border-bottom: 1px solid #30363d;
+            font-size: 16px;
+            color: #58a6ff;
+            margin: 0;
+        }
+        
+        .test-column.has-filters h2 {
+            background: #1f6feb;
+            color: #ffffff;
+        }
+        
+        .test-column.missing-filters h2 {
+            background: #da3633;
+            color: #ffffff;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status.success {
+            background: #238636;
+            color: #ffffff;
+        }
+        
+        .status.failure {
+            background: #da3633;
+            color: #ffffff;
+        }
+        
+        .json-container {
+            padding: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+            background: #0d1117;
+        }
+        
+        .json-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.4;
+            color: #79c0ff;
+        }
+        
+        .json-content .key {
+            color: #79c0ff;
+        }
+        
+        .json-content .string {
+            color: #a371f7;
+        }
+        
+        .json-content .number {
+            color: #79c0ff;
+        }
+        
+        .json-content .boolean {
+            color: #f0883e;
+        }
+        
+        .json-content .null {
+            color: #8b949e;
+        }
+        
+        .json-content .highlight-true {
+            background: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        
+        .json-content .highlight-missing {
+            background: rgba(218, 54, 51, 0.2);
+            color: #f85149;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        
+        .filter-check {
+            padding: 15px;
+            border-top: 1px solid #30363d;
+            font-size: 13px;
+        }
+        
+        .filter-check .found {
+            color: #3fb950;
+            font-weight: 600;
+        }
+        
+        .filter-check .missing {
+            color: #f85149;
+            font-weight: 600;
+        }
+        
+        .legend {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+        
+        .legend h3 {
+            color: #58a6ff;
+            margin-bottom: 10px;
+        }
+        
+        .legend-item {
+            margin: 8px 0;
+        }
+        
+        .legend-item .indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+        
+        .indicator.success {
+            background: #238636;
+        }
+        
+        .indicator.failure {
+            background: #da3633;
+        }
+        
+        .error {
+            background: #3d2626;
+            color: #f85149;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        
+        button:hover {
+            background: #2ea043;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Content Filter Test Results</h1>
+        <p class="subtitle">Comparing Direct Agent Call vs Workflow Call</p>
+        
+        <div class="issue-alert">
+            <strong>Issue:</strong> When a guardrail/content filter is triggered, the response details differ significantly between direct agent calls and workflow calls. This test demonstrates the difference.
+        </div>
+        
+        <div class="controls">
+            <button onclick="location.reload()">🔄 Reload</button>
+            <button onclick="downloadResults()">⬇️ Download JSON</button>
+        </div>
+        
+        <div id="content"></div>
+    </div>
+
+    <script>
+        async function loadAndDisplayResults() {
+            const content = document.getElementById('content');
+            
+            try {
+                const response = await fetch('./test-results.json');
+                if (!response.ok) {
+                    throw new Error('test-results.json not found. Please run: python test-content-filter.py');
+                }
+                
+                const results = await response.json();
+                displayResults(results);
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message}<br>
+                        <small>Please run the test first: <code>python test-content-filter.py</code></small>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayResults(results) {
+            const content = document.getElementById('content');
+            const direct = results.direct_agent;
+            const workflow = results.workflow;
+            
+            // Check for content_filters
+            const directHasFilters = hasContentFilters(direct);
+            const workflowHasFilters = hasContentFilters(workflow);
+            
+            let html = `
+                <div class="test-info">
+                    <p><strong>Test Date:</strong> ${results.test_date}</p>
+                    <p><strong>Foundry Endpoint:</strong> ${results.foundry_endpoint}</p>
+                    <p><strong>Test Message:</strong> <em>"${results.test_message}"</em></p>
+                </div>
+                
+                <div class="legend">
+                    <h3>Results Summary</h3>
+                    <div class="legend-item">
+                        <div class="indicator success"></div>
+                        <strong>Direct Agent Call:</strong> Content filters ${directHasFilters ? '<span class="found">✓ PRESENT</span>' : '<span class="missing">✗ MISSING</span>'}
+                    </div>
+                    <div class="legend-item">
+                        <div class="indicator ${workflowHasFilters ? 'success' : 'failure'}"></div>
+                        <strong>Workflow Call:</strong> Content filters ${workflowHasFilters ? '<span class="found">✓ PRESENT</span>' : '<span class="missing">✗ MISSING</span>'}
+                    </div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="test-column ${directHasFilters ? 'has-filters' : ''}">
+                        <h2>Direct Agent Call</h2>
+                        <div class="status ${directHasFilters ? 'success' : 'failure'}">
+                            ${directHasFilters ? '✓ Content Filters Present' : '✗ No Content Filters'}
+                        </div>
+                        <div class="json-container">
+                            <div class="json-content">${formatJSON(direct, true)}</div>
+                        </div>
+                        <div class="filter-check">
+                            ${directHasFilters ? 
+                                '<div class="found">✓ content_filters field found in response</div>' : 
+                                '<div class="missing">✗ No content_filters in response</div>'
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="test-column ${workflowHasFilters ? 'has-filters' : 'missing-filters'}">
+                        <h2>Workflow Call</h2>
+                        <div class="status ${workflowHasFilters ? 'success' : 'failure'}">
+                            ${workflowHasFilters ? '✓ Content Filters Present' : '✗ No Content Filters'}
+                        </div>
+                        <div class="json-container">
+                            <div class="json-content">${formatJSON(workflow, false)}</div>
+                        </div>
+                        <div class="filter-check">
+                            ${workflowHasFilters ? 
+                                '<div class="found">✓ content_filters field found in response</div>' : 
+                                '<div class="missing">✗ Content filters are MISSING - this is the issue!</div>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        function hasContentFilters(data) {
+            const json = JSON.stringify(data);
+            // Check if actual content filter data exists (with "blocked": true)
+            return json.includes('"blocked":true') && json.includes('"content_filter_results"');
+        }
+        
+        function formatJSON(obj, isDirectCall) {
+            let json = JSON.stringify(obj, null, 2);
+            
+            // Syntax highlighting
+            json = json
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            json = json
+                .replace(/"([^"]+)":/g, '<span class="key">"$1":</span>')
+                .replace(/: "([^"]*)"/g, ': <span class="string">"$1"</span>')
+                .replace(/: (\d+)/g, ': <span class="number">$1</span>')
+                .replace(/: (true|false)/g, ': <span class="boolean">$1</span>')
+                .replace(/: null/g, ': <span class="null">null</span>');
+            
+            // Highlight content_filters
+            if (isDirectCall) {
+                // In direct call, highlight the presence of content_filter_results
+                json = json.replace(/"content_filter_results"/g, '<span class="highlight-true">"content_filter_results"</span>');
+                json = json.replace(/"blocked":\s*<span class="boolean">true<\/span>/g, '<span class="highlight-true">"blocked": <span class="boolean">true</span></span>');
+            } else {
+                // In workflow call, highlight that content_filters is null
+                json = json.replace(/"content_filters":\s*<span class="null">null<\/span>/g, '<span class="highlight-missing">"content_filters": <span class="null">null</span></span>');
+            }
+            
+            return json;
+        }
+        
+        function downloadResults() {
+            fetch('./test-results.json')
+                .then(r => r.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'test-results.json';
+                    a.click();
+                });
+        }
+        
+        // Load results on page load
+        document.addEventListener('DOMContentLoaded', loadAndDisplayResults);
+    </script>
+</body>
+</html>

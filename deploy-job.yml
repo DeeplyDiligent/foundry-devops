@@ -1,0 +1,66 @@
+## Job template: Deploy agents/workflows to Azure AI Foundry
+## This file is referenced from `.azuredevops/main.yaml` under `jobs:`.
+ 
+parameters:
+- name: environment
+  type: string
+  default: dev
+ 
+ 
+ 
+- name: pythonVersion
+  type: string
+  default: '3.11'
+ 
+# Kept for compatibility with callers that already pass these.
+- name: sc
+  type: string
+  default: ''
+- name: rsg_grp
+  type: string
+  default: ''
+- name: webapp_name
+  type: string
+  default: ''
+ 
+jobs:
+- job: DeployToFoundry
+  displayName: 'Deploy to Azure AI Foundry'
+  steps:
+  - bash: |
+      apt-get -y update
+      apt-get -y install --reinstall build-essential
+      apt-get -y install python3-dev
+      apt-get -y install unixodbc-dev
+      apt-get -y install zip
+      apt-get -y install python3.11-venv 
+      python3 --version
+    displayName: 'Set up Python'
+
+  - bash: |
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    displayName: 'Install Python dependencies'
+ 
+  - bash: |
+      source venv/bin/activate
+ 
+      ENV_IN="${{ parameters.environment }}"
+      ENV="$ENV_IN"
+ 
+      case "${ENV_IN}" in
+        *DEV*|*dev*) ENV="dev" ;;
+        *TEST*|*test*) ENV="test" ;;
+        *PROD*|*prod*) ENV="prod" ;;
+      esac
+ 
+      echo "Deploying agents/workflows to environment: ${ENV} (input: ${ENV_IN})"
+      python scripts/deployment/deploy-agents-and-workflows.py --environment "${ENV}"
+    displayName: 'Deploy agents and workflows'
+    env:
+      AZURE_SUBSCRIPTION_ID: $(AZURE_SUBSCRIPTION_ID)
+      AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+      AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+      AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)

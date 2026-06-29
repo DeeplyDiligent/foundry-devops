@@ -1,0 +1,18 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_wf
+  actions:
+    - kind: InvokeAzureAgent
+      id: new
+      agent:
+        name: new
+      description: First agent in sequential workflow
+      conversationId: =System.ConversationId
+      input: {}
+      output:
+        messages: Local.LatestMessage
+        autoSend: false
+id: ""
+name: test-sequential
+description: ""

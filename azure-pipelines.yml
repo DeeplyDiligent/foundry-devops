@@ -1,0 +1,39 @@
+# Azure DevOps Pipeline for Foundry Agent Deployment
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Deploy
+  displayName: 'Deploy Agents and Workflows'
+  jobs:
+  - job: DeployToFoundry
+    displayName: 'Deploy to Azure AI Foundry'
+    steps:
+    - script: |
+        python3 --version
+        python3 -m pip --version
+      displayName: 'Check Python version'
+    
+    - script: |
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+      displayName: 'Install Python dependencies'
+    
+    - script: |
+        source venv/bin/activate
+        python scripts/deployment/deploy-agents-and-workflows.py --environment $(ENVIRONMENT)
+      displayName: 'Deploy agents and workflows'
+      env:
+        AZURE_SUBSCRIPTION_ID: $(AZURE_SUBSCRIPTION_ID)
+        AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+        AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+        AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)

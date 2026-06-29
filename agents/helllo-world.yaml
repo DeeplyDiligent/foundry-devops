@@ -1,0 +1,13 @@
+metadata:
+  description: ''
+  modified_at: '1772747612'
+object: agent.version
+id: helllo-world:5
+name: helllo-world
+version: '5'
+description: ''
+created_at: 2026-01-05 02:19:38+00:00
+definition:
+  kind: prompt
+  model: gpt-4.1
+  instructions: ''

@@ -171,12 +171,14 @@ class FoundryDeployer:
                 # Create NEW Foundry workflow agent using create_version()
                 # Workflows are a type of agent with kind="workflow"
                 # Pass the raw YAML string as the workflow definition
+                # Include preview feature header for workflow agents
                 workflow_agent = await self.project_client.agents.create_version(
                     agent_name=workflow_name,
                     description=description,
                     definition=WorkflowAgentDefinition(
                         workflow=workflow_yaml_string
-                    )
+                    ),
+                    headers={"Foundry-Features": "WorkflowAgents=V1Preview"}
                 )
                 
                 print(f"  ✓ Workflow '{workflow_name}' created successfully (v{workflow_agent.version})")

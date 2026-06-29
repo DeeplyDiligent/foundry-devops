@@ -1,0 +1,18 @@
+metadata:
+  description: ''
+  modified_at: '1772748900'
+object: agent.version
+id: new:7
+name: new
+version: '7'
+description: ''
+created_at: 2026-03-05 21:32:33+00:00
+definition:
+  kind: prompt
+  model: gpt-4.1
+  instructions: ''
+  tools:
+  - type: fabric_dataagent_preview
+    fabric_dataagent_preview:
+      project_connections:
+      - project_connection_id: /subscriptions/fce27326-d5b1-4a1e-b77c-5a869a831de1/resourceGroups/meeting-helper/providers/Microsoft.CognitiveServices/accounts/oai-resource-aueast/projects/oai-project-aueast/connections/fabric_dataagent_preview_dd1f34
